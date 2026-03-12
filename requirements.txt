@@ -1,0 +1,3 @@
+gradio>=4.0
+openai>=1.0       # used via OpenRouter (base_url override)
+plotly>=5.0       # Dev 2 charts
