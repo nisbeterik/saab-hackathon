@@ -286,111 +286,83 @@ except ImportError:
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
 CUSTOM_CSS = """
-/* ── Global: force every element dark bg + light text ── */
-*, *::before, *::after {
-    color: #e6edf3 !important;
-    border-color: #3d444d !important;
-    box-sizing: border-box;
+/* ── Override Gradio's CSS variables — this is the correct theming mechanism ── */
+:root {
+    --body-background-fill:            #0d1117 !important;
+    --background-fill-primary:         #0d1117 !important;
+    --background-fill-secondary:       #161b22 !important;
+    --block-background-fill:           #161b22 !important;
+    --panel-background-fill:           #0d1117 !important;
+    --border-color-primary:            #3d444d !important;
+    --border-color-accent:             #1f6feb !important;
+    --color-accent:                    #1f6feb !important;
+    --body-text-color:                 #e6edf3 !important;
+    --body-text-color-subdued:         #8b949e !important;
+    --block-label-text-color:          #8b949e !important;
+    --block-title-text-color:          #e6edf3 !important;
+    --input-background-fill:           #161b22 !important;
+    --input-background-fill-focus:     #1c2128 !important;
+    --input-border-color:              #3d444d !important;
+    --input-border-color-focus:        #1f6feb !important;
+    --input-text-color:                #e6edf3 !important;
+    --input-placeholder-color:         #6e7681 !important;
+    --button-secondary-background-fill:       #21262d !important;
+    --button-secondary-background-fill-hover: #2d333b !important;
+    --button-secondary-text-color:     #e6edf3 !important;
+    --button-secondary-border-color:   #3d444d !important;
+    --button-primary-background-fill:  #1f6feb !important;
+    --button-primary-text-color:       #ffffff !important;
+    --button-cancel-background-fill:   #6e1717 !important;
+    --button-cancel-border-color:      #f85149 !important;
+    --button-cancel-text-color:        #ffffff !important;
+    --chatbot-code-background-color:   #21262d !important;
+    --message-text-color:              #e6edf3 !important;
+    --message-background-fill:         #161b22 !important;
+    --table-even-background-fill:      #161b22 !important;
+    --table-odd-background-fill:       #1c2128 !important;
+    --table-border-color:              #3d444d !important;
+    --checkbox-background-color:       #161b22 !important;
+    --checkbox-border-color:           #3d444d !important;
+    --shadow-drop: none;
+    --shadow-drop-lg: none;
 }
-body, .gradio-container, .main, .contain {
-    background-color: #0d1117 !important;
-    font-family: 'Courier New', monospace !important;
-}
-footer { display: none !important; }
 
-/* ── All panels, blocks, rows, columns ── */
-.block, .form, .panel, .wrap, .gap, .padded,
-.tabitem, [role="tabpanel"],
-.svelte-1ipelgc, .svelte-vt1mxs {
-    background-color: #0d1117 !important;
-    border-color: #3d444d !important;
+footer { display: none !important; }
+body, .gradio-container { font-family: 'Courier New', monospace !important; }
+
+/* ── Markdown text ── */
+.prose, .prose p, .prose li, .prose h1, .prose h2, .prose h3,
+.markdown, .markdown p {
+    color: #e6edf3 !important;
 }
+h3 { color: #e6edf3 !important; font-family: 'Courier New', monospace !important; letter-spacing: 1px; }
 
 /* ── Tab nav ── */
-.tab-nav {
-    background-color: #161b22 !important;
-    border-bottom: 1px solid #3d444d !important;
-}
+.tab-nav { border-bottom: 1px solid #3d444d !important; }
 .tab-nav button {
-    background-color: #161b22 !important;
-    color: #8b949e !important;
-    border: none !important;
-    border-bottom: 2px solid transparent !important;
     font-family: 'Courier New', monospace !important;
     text-transform: uppercase;
     letter-spacing: 2px;
     font-size: 10px;
     padding: 8px 16px !important;
 }
-.tab-nav button.selected {
-    color: #e6edf3 !important;
-    border-bottom: 2px solid #1f6feb !important;
-    background-color: #161b22 !important;
-}
+.tab-nav button.selected { border-bottom: 2px solid #1f6feb !important; }
 
-/* ── Inputs, textareas ── */
-textarea, input, select {
-    background-color: #161b22 !important;
-    color: #e6edf3 !important;
-    border: 1px solid #3d444d !important;
-}
-textarea::placeholder, input::placeholder {
-    color: #6e7681 !important;
-}
+/* ── Dropdown open list ── */
+ul[role="listbox"], .options { background-color: #161b22 !important; border-color: #3d444d !important; }
+li[role="option"] { color: #e6edf3 !important; background-color: #161b22 !important; }
+li[role="option"]:hover, li[role="option"][aria-selected="true"] { background-color: #21262d !important; }
 
-/* ── Dropdowns ── */
-.dropdown-arrow, .options, ul[role="listbox"], li[role="option"] {
-    background-color: #161b22 !important;
-    color: #e6edf3 !important;
-    border-color: #3d444d !important;
-}
-li[role="option"]:hover {
-    background-color: #21262d !important;
-}
+/* ── Multiselect selected tags ── */
+.token, .token span, span.token { background-color: #1f6feb !important; color: #ffffff !important; }
+.token .delete-token { color: #ffffff !important; }
 
-/* ── Chatbot ── */
-.chatbot, [data-testid="chatbot"] {
-    background-color: #0d1117 !important;
-    border: 1px solid #3d444d !important;
-}
-.chatbot .message, .message-bubble-border {
-    border-color: #3d444d !important;
-}
-.chatbot .bot.message, .chatbot [data-testid="bot"] {
-    background-color: #161b22 !important;
-    color: #e6edf3 !important;
-}
-.chatbot .user.message, .chatbot [data-testid="user"] {
-    background-color: #1a2332 !important;
-    color: #e6edf3 !important;
-}
-
-/* ── Buttons ── */
-button {
-    background-color: #21262d !important;
-    color: #e6edf3 !important;
-    border: 1px solid #3d444d !important;
-}
-button.primary { background-color: #1f6feb !important; border-color: #1f6feb !important; }
-button.stop    { background-color: #6e1717 !important; border-color: #f85149 !important; }
-button:hover   { border-color: #d29922 !important; }
-
-/* ── Event buttons ── */
+/* ── Event injection buttons ── */
 .evt-btn button {
-    background-color: #21262d !important;
-    color: #e6edf3 !important;
     font-family: 'Courier New', monospace !important;
     text-transform: uppercase;
     font-size: 9px;
     letter-spacing: 1px;
-}
-.evt-btn button:hover { border-color: #d29922 !important; color: #d29922 !important; }
-
-/* ── Accordion ── */
-details, details > summary {
-    background-color: #161b22 !important;
-    border-color: #3d444d !important;
-    color: #e6edf3 !important;
 }
 
 /* ── Status bar ── */
@@ -401,29 +373,20 @@ details, details > summary {
     border: 1px solid #3d444d;
     border-radius: 6px;
     padding: 10px 16px;
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    flex-wrap: wrap;
+    display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
 }
 
 /* ── Aircraft grid & cards ── */
 .aircraft-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
-    gap: 10px;
-    padding: 14px;
-    background-color: #0d1117;
+    gap: 10px; padding: 14px;
 }
 .ac-card {
-    border-radius: 5px;
-    padding: 11px 13px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    border-left: 4px solid;
-    background-color: #161b22;
-    color: #e6edf3;
-    line-height: 1.55;
+    border-radius: 5px; padding: 11px 13px;
+    font-family: 'Courier New', monospace; font-size: 11px;
+    border-left: 4px solid; background-color: #161b22;
+    color: #e6edf3; line-height: 1.55;
 }
 .ac-card.s-green      { border-left-color: #3fb950; }
 .ac-card.s-red        { border-left-color: #f85149; background-color: #1c1010; }
@@ -432,16 +395,10 @@ details, details > summary {
 
 /* ── Event log ── */
 .event-log {
-    font-family: 'Courier New', monospace;
-    font-size: 10px;
-    background-color: #0d1117;
-    color: #3fb950;
-    padding: 8px 10px;
-    height: 120px;
-    overflow-y: auto;
-    border: 1px solid #3d444d;
-    border-radius: 4px;
-    line-height: 1.7;
+    font-family: 'Courier New', monospace; font-size: 10px;
+    background-color: #0d1117; color: #3fb950;
+    padding: 8px 10px; height: 120px; overflow-y: auto;
+    border: 1px solid #3d444d; border-radius: 4px; line-height: 1.7;
 }
 
 /* ── Chat column separator ── */
