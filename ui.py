@@ -20,8 +20,10 @@ import plotly.graph_objects as go
 
 try:
     from state import (
-        BaseState, Aircraft, ResourceInventory, Mission, ATO,
-        MaintenanceSlot, create_initial_state,
+        BaseState, Aircraft, ResourceInventory, Mission, ATO, MaintenanceSlot,
+    )
+    from engine import (
+        create_initial_state,
         trigger_fault, complete_maintenance, consume_resources,
         advance_time, return_from_mission,
     )
