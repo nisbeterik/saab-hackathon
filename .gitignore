@@ -1,0 +1,4 @@
+/PROJECT_BRIEF.md
+__pycache__/
+*.pyc
+venv/
