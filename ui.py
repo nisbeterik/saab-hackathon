@@ -286,13 +286,31 @@ except ImportError:
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
 CUSTOM_CSS = """
-/* Global dark base */
-body, .gradio-container { background-color: #0d1117 !important; color: #c9d1d9 !important; }
+/* ── Global: force every element dark bg + light text ── */
+*, *::before, *::after {
+    color: #e6edf3 !important;
+    border-color: #3d444d !important;
+    box-sizing: border-box;
+}
+body, .gradio-container, .main, .contain {
+    background-color: #0d1117 !important;
+    font-family: 'Courier New', monospace !important;
+}
 footer { display: none !important; }
-.gradio-container { font-family: 'Courier New', monospace !important; }
 
-/* Tab nav */
-.tab-nav { background-color: #161b22 !important; border-bottom: 1px solid #21262d !important; }
+/* ── All panels, blocks, rows, columns ── */
+.block, .form, .panel, .wrap, .gap, .padded,
+.tabitem, [role="tabpanel"],
+.svelte-1ipelgc, .svelte-vt1mxs {
+    background-color: #0d1117 !important;
+    border-color: #3d444d !important;
+}
+
+/* ── Tab nav ── */
+.tab-nav {
+    background-color: #161b22 !important;
+    border-bottom: 1px solid #3d444d !important;
+}
 .tab-nav button {
     background-color: #161b22 !important;
     color: #8b949e !important;
@@ -310,7 +328,86 @@ footer { display: none !important; }
     background-color: #161b22 !important;
 }
 
-/* Aircraft grid */
+/* ── Inputs, textareas ── */
+textarea, input, select {
+    background-color: #161b22 !important;
+    color: #e6edf3 !important;
+    border: 1px solid #3d444d !important;
+}
+textarea::placeholder, input::placeholder {
+    color: #6e7681 !important;
+}
+
+/* ── Dropdowns ── */
+.dropdown-arrow, .options, ul[role="listbox"], li[role="option"] {
+    background-color: #161b22 !important;
+    color: #e6edf3 !important;
+    border-color: #3d444d !important;
+}
+li[role="option"]:hover {
+    background-color: #21262d !important;
+}
+
+/* ── Chatbot ── */
+.chatbot, [data-testid="chatbot"] {
+    background-color: #0d1117 !important;
+    border: 1px solid #3d444d !important;
+}
+.chatbot .message, .message-bubble-border {
+    border-color: #3d444d !important;
+}
+.chatbot .bot.message, .chatbot [data-testid="bot"] {
+    background-color: #161b22 !important;
+    color: #e6edf3 !important;
+}
+.chatbot .user.message, .chatbot [data-testid="user"] {
+    background-color: #1a2332 !important;
+    color: #e6edf3 !important;
+}
+
+/* ── Buttons ── */
+button {
+    background-color: #21262d !important;
+    color: #e6edf3 !important;
+    border: 1px solid #3d444d !important;
+}
+button.primary { background-color: #1f6feb !important; border-color: #1f6feb !important; }
+button.stop    { background-color: #6e1717 !important; border-color: #f85149 !important; }
+button:hover   { border-color: #d29922 !important; }
+
+/* ── Event buttons ── */
+.evt-btn button {
+    background-color: #21262d !important;
+    color: #e6edf3 !important;
+    font-family: 'Courier New', monospace !important;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+.evt-btn button:hover { border-color: #d29922 !important; color: #d29922 !important; }
+
+/* ── Accordion ── */
+details, details > summary {
+    background-color: #161b22 !important;
+    border-color: #3d444d !important;
+    color: #e6edf3 !important;
+}
+
+/* ── Status bar ── */
+.status-bar {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    background-color: #161b22 !important;
+    border: 1px solid #3d444d;
+    border-radius: 6px;
+    padding: 10px 16px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ── Aircraft grid & cards ── */
 .aircraft-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
@@ -325,15 +422,15 @@ footer { display: none !important; }
     font-size: 11px;
     border-left: 4px solid;
     background-color: #161b22;
-    color: #c9d1d9;
+    color: #e6edf3;
     line-height: 1.55;
 }
 .ac-card.s-green      { border-left-color: #3fb950; }
 .ac-card.s-red        { border-left-color: #f85149; background-color: #1c1010; }
-.ac-card.s-grey       { border-left-color: #484f58; opacity: 0.65; }
+.ac-card.s-grey       { border-left-color: #484f58; opacity: 0.7; }
 .ac-card.s-on_mission { border-left-color: #d29922; background-color: #1c1a0f; }
 
-/* Event log */
+/* ── Event log ── */
 .event-log {
     font-family: 'Courier New', monospace;
     font-size: 10px;
@@ -342,45 +439,13 @@ footer { display: none !important; }
     padding: 8px 10px;
     height: 120px;
     overflow-y: auto;
-    border: 1px solid #21262d;
+    border: 1px solid #3d444d;
     border-radius: 4px;
     line-height: 1.7;
 }
 
-/* Event buttons */
-.evt-btn > .wrap > button, .evt-btn button {
-    background-color: #21262d !important;
-    border: 1px solid #30363d !important;
-    color: #c9d1d9 !important;
-    font-family: 'Courier New', monospace !important;
-    text-transform: uppercase;
-    font-size: 9px;
-    letter-spacing: 1px;
-}
-.evt-btn > .wrap > button:hover, .evt-btn button:hover {
-    border-color: #d29922 !important;
-    color: #d29922 !important;
-}
-
-/* Status bar */
-.status-bar {
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    background-color: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 6px;
-    padding: 10px 16px;
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-/* Chat column */
-.chat-col { border-left: 1px solid #21262d; padding-left: 12px; }
-
-/* Headings */
-h3 { color: #e6edf3 !important; font-family: 'Courier New', monospace !important; letter-spacing: 1px; }
+/* ── Chat column separator ── */
+.chat-col { border-left: 1px solid #3d444d; padding-left: 12px; }
 """
 
 # ── Render helpers ─────────────────────────────────────────────────────────────
