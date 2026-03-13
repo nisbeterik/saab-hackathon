@@ -1,8 +1,8 @@
 const STATUS_CONFIG = {
-  green:      { label: 'READY',      color: 'text-col-green', dot: 'bg-col-green', border: 'border-col-green/30' },
-  red:        { label: 'MAINT',      color: 'text-col-red',   dot: 'bg-col-red',   border: 'border-col-red/30'   },
-  grey:       { label: 'GREY',       color: 'text-text-dim',  dot: 'bg-text-dim',  border: 'border-border'        },
-  on_mission: { label: 'AIRBORNE',   color: 'text-col-blue',  dot: 'bg-col-blue',  border: 'border-col-blue/30'  },
+  green:      { label: 'READY',    color: 'text-col-green', dot: 'bg-col-green', border: 'border-col-green/30' },
+  red:        { label: 'MAINT',    color: 'text-col-red',   dot: 'bg-col-red',   border: 'border-col-red/30'   },
+  grey:       { label: 'GREY',     color: 'text-text-dim',  dot: 'bg-text-dim',  border: 'border-border'        },
+  on_mission: { label: 'AIRBORNE', color: 'text-col-blue',  dot: 'bg-col-blue',  border: 'border-col-blue/30'  },
 }
 
 function lifeColor(life) {
@@ -17,7 +17,7 @@ function lifeTextColor(life) {
   return 'text-col-red'
 }
 
-function AircraftCard({ ac }) {
+function AircraftCard({ ac, mission }) {
   const s = STATUS_CONFIG[ac.status] ?? STATUS_CONFIG.grey
   const lifePct = Math.min(100, Math.round((ac.remaining_life / 200) * 100))
 
@@ -36,7 +36,7 @@ function AircraftCard({ ac }) {
       {/* Life bar */}
       <div>
         <div className="flex justify-between text-xs mb-0.5">
-          <span className="text-text-dim">Life</span>
+          <span className="text-text-dim">Life remaining</span>
           <span className={`font-semibold ${lifeTextColor(ac.remaining_life)}`}>{ac.remaining_life}h</span>
         </div>
         <div className="h-1.5 bg-raised rounded-full overflow-hidden">
@@ -47,10 +47,13 @@ function AircraftCard({ ac }) {
         </div>
       </div>
 
-      {/* Config + location */}
+      {/* Config + mission/location */}
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-lo">{ac.configuration}</span>
-        <span className="text-text-dim">{ac.location}</span>
+        {ac.status === 'on_mission' && mission
+          ? <span className="text-col-blue font-semibold">{mission}</span>
+          : <span className="text-text-dim">{ac.location}</span>
+        }
       </div>
 
       {/* Payload */}
@@ -77,6 +80,14 @@ function AircraftCard({ ac }) {
 export default function FleetPanel({ state }) {
   const aircraft = state?.aircraft ?? []
 
+  // Build reverse map: aircraft ID -> mission ID
+  const missionByAircraft = {}
+  ;(state?.ato?.missions ?? []).forEach(m => {
+    ;(m.assigned_aircraft ?? []).forEach(id => {
+      missionByAircraft[id] = m.id
+    })
+  })
+
   const groups = {
     green:      aircraft.filter(a => a.status === 'green'),
     on_mission: aircraft.filter(a => a.status === 'on_mission'),
@@ -86,9 +97,9 @@ export default function FleetPanel({ state }) {
 
   return (
     <div className="space-y-4">
-      {/* Wear summary bar */}
+      {/* Wear summary */}
       <div className="bg-surface border border-border rounded p-3">
-        <div className="text-xs text-text-dim uppercase tracking-wider mb-2">Fleet Wear (hours to heavy service)</div>
+        <div className="text-xs text-text-dim uppercase tracking-wider mb-2">Fleet Wear — hours to heavy service</div>
         <div className="space-y-1.5">
           {[...aircraft].sort((a, b) => a.remaining_life - b.remaining_life).map(ac => (
             <div key={ac.id} className="flex items-center gap-2">
@@ -107,7 +118,7 @@ export default function FleetPanel({ state }) {
         </div>
       </div>
 
-      {/* Aircraft cards by group */}
+      {/* Aircraft cards grouped by status */}
       {[
         { key: 'green',      label: 'Ready' },
         { key: 'on_mission', label: 'Airborne' },
@@ -118,7 +129,7 @@ export default function FleetPanel({ state }) {
           <div className="text-xs text-text-dim uppercase tracking-wider mb-2">{g.label} ({groups[g.key].length})</div>
           <div className="grid grid-cols-2 gap-2">
             {groups[g.key].map(ac => (
-              <AircraftCard key={ac.id} ac={ac} />
+              <AircraftCard key={ac.id} ac={ac} mission={missionByAircraft[ac.id]} />
             ))}
           </div>
         </div>
