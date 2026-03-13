@@ -1,19 +1,41 @@
 const SCENARIOS = [
-  { label: 'Scenario 1', sub: 'Assign Fleet', path: '/api/scenario/1', color: 'border-col-blue text-col-blue hover:bg-col-blue/10' },
-  { label: 'Scenario 2', sub: 'Fault Cascade', path: '/api/scenario/2', color: 'border-col-red text-col-red hover:bg-col-red/10' },
-  { label: 'Scenario 3', sub: 'Advance 6h', path: '/api/scenario/3', color: 'border-col-amber text-col-amber hover:bg-col-amber/10' },
+  {
+    label: 'New ATO',
+    sub:   'Allocate fleet',
+    path:  '/api/scenario/1',
+    color: 'border-col-blue text-col-blue hover:bg-col-blue/10',
+  },
+  {
+    label: 'BIT Fault',
+    sub:   'GE05 + cascade',
+    path:  '/api/scenario/2',
+    color: 'border-col-red text-col-red hover:bg-col-red/10',
+  },
+  {
+    label: 'Advance 6h',
+    sub:   'Time skip',
+    path:  '/api/scenario/3',
+    color: 'border-col-amber text-col-amber hover:bg-col-amber/10',
+  },
 ]
 
 const TIME_ACTIONS = [
-  { label: '+1h', hours: 1 },
-  { label: '+6h', hours: 6 },
+  { label: '+1h',  hours: 1  },
+  { label: '+6h',  hours: 6  },
   { label: '+12h', hours: 12 },
 ]
 
 export default function ControlBar({ onAction, loading }) {
+  const handleReset = () => {
+    if (window.confirm('Reset all state to initial? This cannot be undone.')) {
+      onAction('/api/action/reset')
+    }
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Scenarios */}
+
+      {/* Scenario buttons */}
       <div className="flex gap-1.5">
         {SCENARIOS.map(s => (
           <button
@@ -48,7 +70,7 @@ export default function ControlBar({ onAction, loading }) {
 
       <div className="w-px h-8 bg-border" />
 
-      {/* Misc actions */}
+      {/* Random event */}
       <button
         onClick={() => onAction('/api/action/random-event')}
         disabled={loading}
@@ -58,10 +80,14 @@ export default function ControlBar({ onAction, loading }) {
         Random Event
       </button>
 
-      {/* Reset — right-aligned */}
+      {loading && (
+        <span className="text-xs text-text-dim animate-pulse">Processing...</span>
+      )}
+
+      {/* Reset — right-aligned, guarded by confirm */}
       <div className="ml-auto">
         <button
-          onClick={() => onAction('/api/action/reset')}
+          onClick={handleReset}
           disabled={loading}
           className="px-3 py-1 border border-border text-text-dim hover:text-col-red hover:border-col-red/50
             rounded text-xs font-semibold transition-colors disabled:opacity-40"
@@ -69,10 +95,6 @@ export default function ControlBar({ onAction, loading }) {
           Reset
         </button>
       </div>
-
-      {loading && (
-        <span className="text-xs text-text-dim animate-pulse">Processing...</span>
-      )}
     </div>
   )
 }
