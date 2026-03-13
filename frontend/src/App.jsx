@@ -29,6 +29,7 @@ async function apiFetch(path, options = {}) {
 export default function App() {
   const [state, setState] = useState(null)
   const [activeTab, setActiveTab] = useState('Fleet')
+  const [fleetFilter, setFleetFilter] = useState(null)
   const [messages, setMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
@@ -141,10 +142,26 @@ export default function App() {
                 {state.phase}
               </span>
               <span className="text-text-dim">|</span>
-              <span className="text-col-green">{ready} Ready</span>
-              <span className="text-col-blue">{onMission} Flying</span>
-              {inMaint > 0 && <span className="text-col-red">{inMaint} Maint</span>}
-              {grey > 0 && <span className="text-text-dim">{grey} Grey</span>}
+              <span
+                className="text-col-green cursor-pointer hover:underline"
+                onClick={() => { setActiveTab('Fleet'); setFleetFilter('green') }}
+              >{ready} Ready</span>
+              <span
+                className="text-col-blue cursor-pointer hover:underline"
+                onClick={() => { setActiveTab('Fleet'); setFleetFilter('on_mission') }}
+              >{onMission} Flying</span>
+              {inMaint > 0 && (
+                <span
+                  className="text-col-red cursor-pointer hover:underline"
+                  onClick={() => { setActiveTab('Fleet'); setFleetFilter('red') }}
+                >{inMaint} Maint</span>
+              )}
+              {grey > 0 && (
+                <span
+                  className="text-text-dim cursor-pointer hover:underline"
+                  onClick={() => { setActiveTab('Fleet'); setFleetFilter('grey') }}
+                >{grey} Grey</span>
+              )}
             </>
           )}
           {!state && <span className="text-text-dim animate-pulse">Connecting...</span>}
@@ -181,7 +198,14 @@ export default function App() {
                 Loading state...
               </div>
             )}
-            {state && activeTab === 'Fleet'     && <FleetPanel state={state} />}
+            {state && activeTab === 'Fleet'     && (
+              <FleetPanel
+                state={state}
+                onAction={runAction}
+                fleetFilter={fleetFilter}
+                onClearFilter={() => setFleetFilter(null)}
+              />
+            )}
             {state && activeTab === 'Missions'  && (
               <MissionsPanel
                 state={state}
