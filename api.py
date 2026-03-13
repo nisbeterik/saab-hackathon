@@ -59,7 +59,7 @@ class AdvanceTimeRequest(BaseModel):
 
 class AssignAircraftRequest(BaseModel):
     mission_id: str
-    aircraft_ids: list[str]
+    aircraft_ids: list[str] = Field(..., min_length=1)
 
 class AircraftIdRequest(BaseModel):
     aircraft_id: str
