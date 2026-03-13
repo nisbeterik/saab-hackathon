@@ -6,3 +6,7 @@ venv/
 .venv/
 .env
 .gradio/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

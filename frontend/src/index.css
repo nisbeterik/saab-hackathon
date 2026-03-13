@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0d1117;
+  color: #e6edf3;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* Chat message markdown */
+.chat-msg p { margin: 0 0 0.5rem 0; }
+.chat-msg p:last-child { margin-bottom: 0; }
+.chat-msg ul, .chat-msg ol { margin: 0.25rem 0 0.25rem 1.25rem; padding: 0; }
+.chat-msg li { margin: 0.1rem 0; }
+.chat-msg strong { color: #e6edf3; }
+
+/* Pulse animation for "on_mission" status */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
