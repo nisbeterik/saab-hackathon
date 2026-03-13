@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 import random
-from copy import deepcopy
 
 from state import (
     Aircraft,
