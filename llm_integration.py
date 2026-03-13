@@ -13,7 +13,7 @@ from typing import Optional
 
 import requests
 
-from models import BaseState, Aircraft, Mission
+from state import BaseState, Aircraft, Mission
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -267,7 +267,6 @@ class LLMAssistant:
                 "Set OPENROUTER_API_KEY env var or pass api_key= to LLMAssistant()."
             )
         # History is stored as list of (user_msg, assistant_msg) tuples
-        # This is the format Gradio gr.Chatbot expects natively
         self._history: list[tuple[str, str]] = []
 
     def clear_history(self):

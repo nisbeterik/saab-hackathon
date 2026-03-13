@@ -1,24 +1,3 @@
-const SCENARIOS = [
-  {
-    label: 'New ATO',
-    sub:   'Allocate fleet',
-    path:  '/api/scenario/1',
-    color: 'border-col-blue text-col-blue hover:bg-col-blue/10',
-  },
-  {
-    label: 'BIT Fault',
-    sub:   'GE05 + cascade',
-    path:  '/api/scenario/2',
-    color: 'border-col-red text-col-red hover:bg-col-red/10',
-  },
-  {
-    label: 'Advance 6h',
-    sub:   'Time skip',
-    path:  '/api/scenario/3',
-    color: 'border-col-amber text-col-amber hover:bg-col-amber/10',
-  },
-]
-
 const TIME_ACTIONS = [
   { label: '+1h',  hours: 1  },
   { label: '+6h',  hours: 6  },
@@ -34,24 +13,6 @@ export default function ControlBar({ onAction, loading }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-
-      {/* Scenario buttons */}
-      <div className="flex gap-1.5">
-        {SCENARIOS.map(s => (
-          <button
-            key={s.path}
-            onClick={() => onAction(s.path)}
-            disabled={loading}
-            className={`flex flex-col items-center px-3 py-1 border rounded text-xs font-semibold
-              transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${s.color}`}
-          >
-            <span>{s.label}</span>
-            <span className="text-xs opacity-70 font-normal">{s.sub}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="w-px h-8 bg-border" />
 
       {/* Time controls */}
       <div className="flex gap-1">
@@ -72,7 +33,11 @@ export default function ControlBar({ onAction, loading }) {
 
       {/* Random event */}
       <button
-        onClick={() => onAction('/api/action/random-event')}
+        onClick={() => {
+          if (window.confirm('Inject a random event? This will mutate the current state.')) {
+            onAction('/api/action/random-event')
+          }
+        }}
         disabled={loading}
         className="px-3 py-1 border border-col-amber/50 text-col-amber hover:bg-col-amber/10
           rounded text-xs font-semibold transition-colors disabled:opacity-40"

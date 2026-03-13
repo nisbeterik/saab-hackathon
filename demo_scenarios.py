@@ -19,7 +19,7 @@ Initial engine state (Day 2, 08:00, Phase: Kris):
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional  # noqa: F401 — used in ScenarioStep field type
 
 
 @dataclass
@@ -166,41 +166,3 @@ DEMO_SCRIPT: list[ScenarioStep] = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Quick-access individual questions (for free-form demo navigation)
-# ---------------------------------------------------------------------------
-
-QUICK_QUESTIONS: list[str] = [
-    "Which aircraft should I send on the next RECCE sortie?",
-    "Can we handle 2 extra DCA sorties in the next 12 hours?",
-    "What's the impact of losing GE05 for 6 hours?",
-    "What's our readiness forecast for the next 48 hours?",
-    "Should I use a Radar UE on GE05 or hold it in reserve?",
-    "What's the current fleet status summary?",
-    "Which missions are at risk right now?",
-    "What resources are running critically low?",
-    "Recommend a maintenance priority order for the workshop.",
-    "If we get a new Bredduppgift (surge order) for 3 AI/ST sorties, can we handle it?",
-]
-
-
-# ---------------------------------------------------------------------------
-# Gradio helper — returns dropdown choices for the demo panel
-# ---------------------------------------------------------------------------
-
-def get_scenario_labels() -> list[str]:
-    return [s.label for s in DEMO_SCRIPT]
-
-
-def get_scenario_question(label: str) -> str:
-    for s in DEMO_SCRIPT:
-        if s.label == label:
-            return s.question
-    return ""
-
-
-def get_scenario_event(label: str) -> Optional[str]:
-    for s in DEMO_SCRIPT:
-        if s.label == label:
-            return s.event_trigger
-    return None

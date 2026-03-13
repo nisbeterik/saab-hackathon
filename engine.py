@@ -4,7 +4,7 @@ Saab Smart Air Base Hackathon
 
 Provides:
   - create_initial_state()     Build a realistic Day-2 Kris scenario
-  - get_state() / reset_state() Module-level singleton for Gradio/LLM layers
+  - get_state() / reset_state() Module-level singleton for API/LLM layers
   - State mutation functions:  assign_aircraft, trigger_fault, complete_maintenance,
                                consume_resources, advance_time, return_from_mission
   - Dice / random events:      roll_bit_check, roll_post_mission, roll_fault_type,
