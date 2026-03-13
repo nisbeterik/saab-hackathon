@@ -140,7 +140,7 @@ export default function MissionsPanel({ state, onAssign }) {
                 return (
                   <div key={m.id} className="flex flex-col items-center gap-0.5" title={`${m.id} ${m.type}: ${assigned.length}/${m.required_aircraft}`}>
                     <div className={`w-2 h-2 rounded-full ${color}`} />
-                    <span className="text-xs text-text-dim" style={{ fontSize: '9px' }}>{m.id}</span>
+                    <span className="text-[9px] text-text-dim">{m.id}</span>
                   </div>
                 )
               })}
