@@ -1,27 +1,40 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+const QUICK_PROMPTS = [
+  'Which aircraft for the next DCA sortie?',
+  "What's our readiness for the next 48h?",
+  'GE05 failed BIT — radar fault. What\'s the impact?',
+  'Should I cannibalize GE03 for the radar?',
+]
+
+function fmtTime(date) {
+  if (!date) return ''
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+}
 
 function Message({ msg }) {
   const isUser = msg.role === 'user'
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
       <div
-        className={`max-w-[85%] rounded px-3 py-2 text-xs leading-relaxed chat-msg
+        className={`max-w-[85%] rounded px-3 py-2 text-xs leading-relaxed
           ${isUser
             ? 'bg-col-blue/20 border border-col-blue/40 text-text-hi'
             : 'bg-raised border border-border text-text-hi'
           }`}
       >
-        {!isUser && (
-          <div className="text-col-green font-bold text-xs mb-1 tracking-wider">AI COMMANDER</div>
-        )}
         <div className="whitespace-pre-wrap">{msg.content}</div>
       </div>
+      {msg.time && (
+        <div className="text-xs text-text-dim mt-0.5 px-1">{fmtTime(msg.time)}</div>
+      )}
     </div>
   )
 }
 
 export default function ChatPanel({ messages, input, loading, onInputChange, onSend, onClear }) {
   const bottomRef = useRef(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -34,21 +47,54 @@ export default function ChatPanel({ messages, input, loading, onInputChange, onS
     }
   }
 
+  const pickPrompt = (q) => {
+    onInputChange(q)
+    setShowSuggestions(false)
+  }
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-col-green" />
           <span className="text-xs font-bold tracking-wider uppercase text-text-hi">AI Assistant</span>
         </div>
-        <button
-          onClick={onClear}
-          className="text-xs text-text-dim hover:text-text-lo transition-colors px-2 py-0.5 rounded hover:bg-raised"
-        >
-          Clear
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowSuggestions(s => !s)}
+            className={`text-xs px-2 py-0.5 rounded border transition-colors
+              ${showSuggestions
+                ? 'border-col-blue/50 text-col-blue bg-col-blue/10'
+                : 'border-transparent text-text-dim hover:text-text-lo hover:bg-raised'
+              }`}
+          >
+            Prompts
+          </button>
+          <button
+            onClick={onClear}
+            className="text-xs text-text-dim hover:text-text-lo transition-colors px-2 py-0.5 rounded hover:bg-raised"
+          >
+            Clear
+          </button>
+        </div>
       </div>
+
+      {/* Quick suggestions dropdown */}
+      {showSuggestions && (
+        <div className="absolute top-10 left-0 right-0 z-10 bg-raised border-b border-border p-2 space-y-1 shadow-lg">
+          {QUICK_PROMPTS.map((q, i) => (
+            <button
+              key={i}
+              onClick={() => pickPrompt(q)}
+              className="w-full text-left text-xs text-text-lo hover:text-text-hi px-2 py-1.5 rounded hover:bg-surface border border-transparent hover:border-border transition-colors"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -56,18 +102,13 @@ export default function ChatPanel({ messages, input, loading, onInputChange, onS
           <div className="space-y-2 text-xs text-text-dim">
             <p className="font-semibold text-text-lo">Base Commander AI — Ask anything:</p>
             <ul className="space-y-1 list-none">
-              {[
-                '"Which aircraft for the next DCA sortie?"',
-                '"What\'s our readiness for 48h?"',
-                '"GE05 failed BIT — radar fault. Impact?"',
-                '"Should I cannibalize GE03 for the radar?"',
-              ].map((q, i) => (
+              {QUICK_PROMPTS.map((q, i) => (
                 <li
                   key={i}
                   className="cursor-pointer hover:text-text-hi transition-colors px-2 py-1 rounded hover:bg-raised border border-transparent hover:border-border"
-                  onClick={() => onInputChange(q.replace(/"/g, ''))}
+                  onClick={() => onInputChange(q)}
                 >
-                  {q}
+                  "{q}"
                 </li>
               ))}
             </ul>
