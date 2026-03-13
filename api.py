@@ -133,6 +133,14 @@ def api_complete_maintenance(body: AircraftIdRequest):
         raise HTTPException(status_code=400, detail=str(e))
     return serialize_state_json(get_state())
 
+@app.post("/api/action/return-from-mission")
+def api_return_from_mission(body: AircraftIdRequest):
+    try:
+        return_from_mission(get_state(), body.aircraft_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return serialize_state_json(get_state())
+
 @app.post("/api/action/random-event")
 def api_random_event():
     generate_random_event(get_state())
@@ -140,26 +148,15 @@ def api_random_event():
 
 
 # ---------------------------------------------------------------------------
-# Demo scenarios
+# Demo scenarios — each resets state first so they're idempotent
 # ---------------------------------------------------------------------------
 
-@app.post("/api/scenario/1")
-def api_scenario1():
-    """Scenario 1: Assign aircraft to active ATO missions."""
-    s = get_state()
+def _sc1_assign(s):
+    """Shared helper: assign fleet to ATO missions (Scenario 1 logic)."""
     try:
-        dca_ac = [
-            ac.id for ac in s.aircraft
-            if ac.status == "green" and ac.configuration == "DCA/CAP"
-        ]
-        recce_ac = [
-            ac.id for ac in s.aircraft
-            if ac.status == "green" and ac.configuration == "RECCE"
-        ]
-        aist_ac = [
-            ac.id for ac in s.aircraft
-            if ac.status == "green" and ac.configuration == "AI/ST"
-        ]
+        dca_ac  = [ac.id for ac in s.aircraft if ac.status == "green" and ac.configuration == "DCA/CAP"]
+        recce_ac = [ac.id for ac in s.aircraft if ac.status == "green" and ac.configuration == "RECCE"]
+        aist_ac  = [ac.id for ac in s.aircraft if ac.status == "green" and ac.configuration == "AI/ST"]
         if len(dca_ac) >= 2:
             assign_aircraft(s, "M01", dca_ac[:2])
         if len(recce_ac) >= 1:
@@ -170,12 +167,23 @@ def api_scenario1():
             assign_aircraft(s, "M05", aist_ac[:1])
     except ValueError:
         pass
+
+
+@app.post("/api/scenario/1")
+def api_scenario1():
+    """Scenario 1 (idempotent): Reset → assign aircraft to active ATO missions."""
+    reset_state()
+    s = get_state()
+    _sc1_assign(s)
     return serialize_state_json(s)
+
 
 @app.post("/api/scenario/2")
 def api_scenario2():
-    """Scenario 2: Fault cascade — GE05 BIT fail + returning aircraft post-mission fault."""
+    """Scenario 2 (idempotent): Reset → sc1 → GE05 BIT fault + returning aircraft fault."""
+    reset_state()
     s = get_state()
+    _sc1_assign(s)
     trigger_fault(s, "GE05")
     returning_ac = next(
         (ac for ac in s.aircraft if ac.status == "on_mission" and ac.id != "GE05"),
@@ -185,10 +193,20 @@ def api_scenario2():
         return_from_mission(s, returning_ac.id)
     return serialize_state_json(s)
 
+
 @app.post("/api/scenario/3")
 def api_scenario3():
-    """Scenario 3: Advance time 6h, consume resources, show pressure."""
+    """Scenario 3 (idempotent): Reset → sc1 → sc2 → advance 6h + consume resources."""
+    reset_state()
     s = get_state()
+    _sc1_assign(s)
+    trigger_fault(s, "GE05")
+    returning_ac = next(
+        (ac for ac in s.aircraft if ac.status == "on_mission" and ac.id != "GE05"),
+        None,
+    )
+    if returning_ac:
+        return_from_mission(s, returning_ac.id)
     advance_time(s, 6)
     for mission in s.ato.missions:
         if mission.assigned_aircraft:
