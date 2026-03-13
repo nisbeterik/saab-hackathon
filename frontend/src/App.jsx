@@ -16,6 +16,13 @@ const PHASE_DESC = {
   Krig: 'War — full combat ops, minimal margin for error',
 }
 
+const PHASE_CYCLE = ['Fred', 'Kris', 'Krig']
+const PHASE_COLORS = {
+  Fred: 'text-col-green border-col-green/40',
+  Kris: 'text-col-amber border-col-amber/40',
+  Krig: 'text-col-red   border-col-red/40',
+}
+
 async function apiFetch(path, options = {}) {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -175,12 +182,19 @@ export default function App() {
                 Day {state.current_day} &middot; {String(state.current_hour).padStart(2, '0')}:00
               </span>
               <span className="text-text-dim">|</span>
-              <span
-                className="uppercase tracking-widest text-col-amber font-bold cursor-help border-b border-dashed border-col-amber/40"
-                title={PHASE_DESC[state.phase] ?? ''}
+              <button
+                onClick={() => {
+                  const next = PHASE_CYCLE[(PHASE_CYCLE.indexOf(state.phase) + 1) % 3]
+                  runAction('/api/action/set-phase', { phase: next })
+                }}
+                disabled={actionLoading}
+                title={`${PHASE_DESC[state.phase] ?? ''} — click to escalate`}
+                className={`uppercase tracking-widest font-bold border-b border-dashed transition-colors
+                  hover:opacity-70 disabled:opacity-40 cursor-pointer
+                  ${PHASE_COLORS[state.phase] ?? 'text-col-amber border-col-amber/40'}`}
               >
                 {state.phase}
-              </span>
+              </button>
               <span className="text-text-dim">|</span>
               <button
                 onClick={() => setTooltipsEnabled(v => !v)}
