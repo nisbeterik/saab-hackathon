@@ -19,7 +19,7 @@ Initial engine state (Day 2, 08:00, Phase: Kris):
 """
 
 from dataclasses import dataclass
-from typing import Optional  # noqa: F401 — used in ScenarioStep field type
+from typing import Optional
 
 
 @dataclass
