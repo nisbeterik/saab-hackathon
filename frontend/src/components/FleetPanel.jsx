@@ -1,3 +1,8 @@
+import { useContext } from 'react'
+import { TooltipCtx } from '../App'
+import Tooltip from './Tooltip'
+import { GLOSSARY } from '../tooltips'
+
 const STATUS_CONFIG = {
   green:      { label: 'READY',    color: 'text-col-green', dot: 'bg-col-green', border: 'border-col-green/30' },
   red:        { label: 'MAINT',    color: 'text-col-red',   dot: 'bg-col-red',   border: 'border-col-red/30'   },
@@ -19,6 +24,7 @@ function lifeTextColor(life) {
 
 function AircraftCard({ ac, mission, onAction }) {
   const s = STATUS_CONFIG[ac.status] ?? STATUS_CONFIG.grey
+  const tooltipsEnabled = useContext(TooltipCtx)
   const lifePct = Math.min(100, Math.round((ac.remaining_life / 200) * 100))
 
   return (
@@ -28,9 +34,13 @@ function AircraftCard({ ac, mission, onAction }) {
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot} ${ac.status === 'on_mission' ? 'pulse-dot' : ''}`} />
           <span className="font-bold text-sm text-text-hi">{ac.id}</span>
-          <span className="text-xs text-text-dim">{ac.type}</span>
+          <Tooltip text={GLOSSARY[ac.type]} enabled={tooltipsEnabled}>
+            <span className="text-xs text-text-dim">{ac.type}</span>
+          </Tooltip>
         </div>
-        <span className={`text-xs font-bold tracking-wider ${s.color}`}>{s.label}</span>
+        <Tooltip text={GLOSSARY[s.label]} enabled={tooltipsEnabled}>
+          <span className={`text-xs font-bold tracking-wider ${s.color}`}>{s.label}</span>
+        </Tooltip>
       </div>
 
       {/* Life bar */}
@@ -49,7 +59,9 @@ function AircraftCard({ ac, mission, onAction }) {
 
       {/* Flight hours + config row */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-text-lo">{ac.configuration}</span>
+        <Tooltip text={GLOSSARY[ac.configuration]} enabled={tooltipsEnabled}>
+          <span className="text-text-lo">{ac.configuration}</span>
+        </Tooltip>
         <span className="text-text-dim">{ac.total_flight_hours}h total</span>
       </div>
 
@@ -76,7 +88,9 @@ function AircraftCard({ ac, mission, onAction }) {
       {/* Fault */}
       {ac.fault && (
         <div className="bg-col-red/10 border border-col-red/30 rounded px-2 py-1 text-xs text-col-red">
-          {ac.fault}
+          <Tooltip text={Object.entries(GLOSSARY).find(([k]) => ac.fault.includes(k))?.[1]} enabled={tooltipsEnabled}>
+            <span>{ac.fault}</span>
+          </Tooltip>
         </div>
       )}
 

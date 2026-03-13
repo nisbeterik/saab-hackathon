@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
+import { TooltipCtx } from '../App'
+import Tooltip from './Tooltip'
+import { GLOSSARY } from '../tooltips'
 
 const TYPE_COLOR = {
   DCA:    'text-col-blue',
@@ -20,17 +23,24 @@ function pad(n) {
   return String(n).padStart(2, '0')
 }
 
-function MissionRow({ mission }) {
+function MissionRow({ mission, selected, onClick }) {
   const assigned = mission.assigned_aircraft ?? []
+  const tooltipsEnabled = useContext(TooltipCtx)
   const needed   = mission.required_aircraft - assigned.length
   const full     = needed <= 0
 
   return (
-    <div className={`bg-surface border rounded p-3 space-y-2 ${full ? 'border-border' : 'border-col-amber/50'}`}>
+    <div
+      onClick={onClick}
+      className={`bg-surface border rounded p-3 space-y-2 cursor-pointer transition-colors hover:border-col-blue/50
+        ${selected ? 'border-col-blue' : full ? 'border-border' : 'border-col-amber/50'}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-bold text-text-hi text-sm">{mission.id}</span>
-          <span className={`text-xs font-bold tracking-wider ${TYPE_COLOR[mission.type] ?? 'text-text-lo'}`}>{mission.type}</span>
+          <Tooltip text={GLOSSARY[mission.type]} enabled={tooltipsEnabled}>
+            <span className={`text-xs font-bold tracking-wider ${TYPE_COLOR[mission.type] ?? 'text-text-lo'}`}>{mission.type}</span>
+          </Tooltip>
         </div>
         <div className={`text-xs font-semibold px-1.5 py-0.5 rounded ${full ? 'text-col-green bg-col-green/10' : 'text-col-amber bg-col-amber/10'}`}>
           {assigned.length}/{mission.required_aircraft} {full ? '✓ ASSIGNED' : `⚠ NEED ${needed}`}
@@ -49,7 +59,9 @@ function MissionRow({ mission }) {
         <span className="text-text-lo">
           Ret <span className="text-text-hi font-semibold">{pad(mission.return_hour)}:00</span>
         </span>
-        <span className="ml-auto text-text-dim">{mission.required_config}</span>
+        <Tooltip text={GLOSSARY[mission.required_config]} enabled={tooltipsEnabled}>
+          <span className="ml-auto text-text-dim">{mission.required_config}</span>
+        </Tooltip>
       </div>
 
       {assigned.length > 0 && (
@@ -68,6 +80,7 @@ function MissionRow({ mission }) {
 export default function MissionsPanel({ state, onAssign }) {
   const missions = state?.ato?.missions ?? []
   const aircraft = state?.aircraft ?? []
+  const tooltipsEnabled = useContext(TooltipCtx)
 
   const [selectedMission, setSelectedMission]   = useState('')
   const [selectedAircraft, setSelectedAircraft] = useState([])
@@ -123,7 +136,9 @@ export default function MissionsPanel({ state, onAssign }) {
           <div className={`border rounded p-3 flex items-center gap-4 ${allGood ? 'bg-col-green/5 border-col-green/30' : 'bg-col-amber/5 border-col-amber/30'}`}>
             <div className="flex-1">
               <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${allGood ? 'text-col-green' : 'text-col-amber'}`}>
-                ATO Coverage
+                <Tooltip text={GLOSSARY['ATO']} enabled={tooltipsEnabled}>
+                  <span>ATO Coverage</span>
+                </Tooltip>
               </div>
               <div className="flex gap-3 text-xs">
                 <span className="text-col-green">{covered} fully assigned</span>
@@ -216,7 +231,14 @@ export default function MissionsPanel({ state, onAssign }) {
 
       {/* Mission cards */}
       <div className="grid grid-cols-2 gap-2">
-        {missions.map(m => <MissionRow key={m.id} mission={m} />)}
+        {missions.map(m => (
+          <MissionRow
+            key={m.id}
+            mission={m}
+            selected={selectedMission === m.id}
+            onClick={() => { setSelectedMission(m.id); setSelectedAircraft([]) }}
+          />
+        ))}
       </div>
 
       {/* Assign form */}
