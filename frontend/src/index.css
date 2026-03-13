@@ -38,6 +38,18 @@ html, body, #root {
 .chat-msg li { margin: 0.1rem 0; }
 .chat-msg strong { color: #e6edf3; }
 
+/* Mascot mouth animation */
+@keyframes mascotMouthOpen {
+  0%, 45%  { opacity: 1; }
+  46%, 100% { opacity: 0; }
+}
+@keyframes mascotMouthClosed {
+  0%, 45%  { opacity: 0; }
+  46%, 100% { opacity: 1; }
+}
+.mouth-open-talking   { animation: mascotMouthOpen   0.35s steps(1, end) infinite; }
+.mouth-closed-talking { animation: mascotMouthClosed 0.35s steps(1, end) infinite; }
+
 /* Pulse animation for "on_mission" status */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
