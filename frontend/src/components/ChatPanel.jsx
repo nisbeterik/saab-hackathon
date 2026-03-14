@@ -12,22 +12,101 @@ function fmtTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
+// Pixel-art military mascot with Swedish flag on hat
+function Mascot({ talking = false }) {
+  const s = 3
+  const T = null
+  const OL = '#4a5a38', OD = '#37492e'
+  const SB = '#006AA7', SY = '#FECC02'
+  const SK = '#c8955a', EY = '#1a0800'
+  const MR = '#7a1f1f', UN = '#2e3d25'
+
+  const grid = [
+    [T,  T,  OL, OL, OL, OL, OL, OL, OL, OL, T,  T ],  // hat crown
+    [T,  T,  OL, SB, SY, OL, OL, OL, OL, OL, T,  T ],  // flag badge
+    [T,  T,  OL, SY, SB, OL, OL, OL, OL, OL, T,  T ],  // flag badge
+    [T,  OD, OD, OD, OD, OD, OD, OD, OD, OD, OD, T ],  // hat brim
+    [T,  T,  SK, SK, SK, SK, SK, SK, SK, SK, T,  T ],   // forehead
+    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // face
+    [T,  SK, EY, SK, SK, SK, SK, SK, EY, SK, SK, T ],   // eyes
+    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // face
+    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // mouth row (overlaid)
+    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // face
+    [T,  T,  SK, SK, SK, SK, SK, SK, SK, SK, T,  T ],   // chin
+    [T,  T,  UN, UN, UN, UN, UN, UN, UN, UN, T,  T ],   // collar
+    [T,  UN, UN, UN, UN, UN, UN, UN, UN, UN, UN, T ],   // uniform
+    [T,  UN, UN, OL, UN, UN, UN, OL, UN, UN, UN, T ],   // epaulettes
+    [T,  UN, UN, UN, UN, UN, UN, UN, UN, UN, UN, T ],
+    [T,  UN, UN, UN, UN, UN, UN, UN, UN, UN, UN, T ],
+    [T,  T,  UN, UN, UN, UN, UN, UN, UN, UN, T,  T ],
+  ]
+
+  return (
+    <svg
+      width={12 * s} height={17 * s}
+      style={{ imageRendering: 'pixelated', flexShrink: 0 }}
+      aria-hidden="true"
+    >
+      {grid.flatMap((row, ri) =>
+        row.map((color, ci) =>
+          color ? <rect key={`${ri}-${ci}`} x={ci * s} y={ri * s} width={s} height={s} fill={color} /> : null
+        )
+      )}
+      {/* Mouth — closed: thin line */}
+      <rect
+        x={4 * s} y={8 * s + 1} width={4 * s} height={1} fill={EY}
+        className={talking ? 'mouth-closed-talking' : ''}
+      />
+      {/* Mouth — open: taller gap */}
+      <rect
+        x={4 * s} y={8 * s} width={4 * s} height={s + 2} fill={MR}
+        className={talking ? 'mouth-open-talking' : ''}
+        opacity={talking ? undefined : 0}
+      />
+    </svg>
+  )
+}
+
+// Left-pointing speech bubble tail (border + fill layers)
+function BubbleTail() {
+  return (
+    <>
+      <div className="absolute top-3" style={{ left: -7, width: 0, height: 0,
+        borderTop: '5px solid transparent', borderBottom: '5px solid transparent',
+        borderRight: '7px solid #30363d' }} />
+      <div className="absolute top-3" style={{ left: -5, width: 0, height: 0,
+        borderTop: '5px solid transparent', borderBottom: '5px solid transparent',
+        borderRight: '6px solid #1c2128' }} />
+    </>
+  )
+}
+
 function Message({ msg }) {
   const isUser = msg.role === 'user'
-  return (
-    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-      <div
-        className={`max-w-[85%] rounded px-3 py-2 text-xs leading-relaxed
-          ${isUser
-            ? 'bg-col-blue/20 border border-col-blue/40 text-text-hi'
-            : 'bg-raised border border-border text-text-hi'
-          }`}
-      >
-        <div className="whitespace-pre-wrap">{msg.content}</div>
+
+  if (isUser) {
+    return (
+      <div className="flex flex-col items-end">
+        <div className="max-w-[85%] rounded px-3 py-2 text-xs leading-relaxed bg-col-blue/20 border border-col-blue/40 text-text-hi">
+          <div className="whitespace-pre-wrap">{msg.content}</div>
+        </div>
+        {msg.time && <div className="text-xs text-text-dim mt-0.5 px-1">{fmtTime(msg.time)}</div>}
       </div>
-      {msg.time && (
-        <div className="text-xs text-text-dim mt-0.5 px-1">{fmtTime(msg.time)}</div>
-      )}
+    )
+  }
+
+  return (
+    <div className="flex flex-col items-start">
+      <div className="flex items-end gap-2">
+        <Mascot talking={false} />
+        <div className="relative max-w-[80%]">
+          <BubbleTail />
+          <div className="bg-raised border border-border rounded px-3 py-2 text-xs leading-relaxed text-text-hi">
+            <div className="whitespace-pre-wrap">{msg.content}</div>
+          </div>
+        </div>
+      </div>
+      {msg.time && <div className="text-xs text-text-dim mt-0.5 ml-10 px-1">{fmtTime(msg.time)}</div>}
     </div>
   )
 }
@@ -170,16 +249,20 @@ export default function ChatPanel({
         )}
         {messages.map((msg, i) => <Message key={i} msg={msg} />)}
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-raised border border-border rounded px-3 py-2">
-              <div className="flex gap-1">
-                {[0, 1, 2].map(i => (
-                  <span
-                    key={i}
-                    className="w-1.5 h-1.5 bg-text-dim rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 0.15}s` }}
-                  />
-                ))}
+          <div className="flex items-end gap-2">
+            <Mascot talking={true} />
+            <div className="relative">
+              <BubbleTail />
+              <div className="bg-raised border border-border rounded px-3 py-2">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map(i => (
+                    <span
+                      key={i}
+                      className="w-1.5 h-1.5 bg-text-dim rounded-full animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>

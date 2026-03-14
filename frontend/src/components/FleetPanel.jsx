@@ -11,6 +11,55 @@ const STATUS_CONFIG = {
   returning:  { label: 'RETURNING', color: 'text-col-cyan',   dot: 'bg-col-cyan',   border: 'border-col-cyan/30'   },
 }
 
+// Top-down pixel-art Gripen — grey only, traced from reference image
+function JetIcon() {
+  const s = 1
+  const T = null
+  const A = '#1e1e2c'  // darkest — cockpit glass, engine interior
+  const B = '#3e3e56'  // dark — engine pods, shadow panels
+  const C = '#606078'  // mid — main body
+  const D = '#848498'  // light — surface highlights, leading edges
+  const W = '#d0d8ec'  // near-white — cockpit highlight, exhaust glow
+
+  // 18 wide × 20 tall
+  const grid = [
+    [T, T, T, T, T, T, T, T, C, C, T, T, T, T, T, T, T, T],  // nose tip
+    [T, T, T, T, T, T, T, C, C, C, C, T, T, T, T, T, T, T],  // nose
+    [T, T, T, T, T, T, C, C, A, A, C, C, T, T, T, T, T, T],  // canopy dark
+    [T, T, T, T, T, T, C, C, A, A, C, C, T, T, T, T, T, T],  // canopy dark
+    [T, T, T, T, T, C, C, C, W, W, C, C, C, T, T, T, T, T],  // canopy white
+    [T, T, T, T, T, C, C, C, B, B, C, C, C, T, T, T, T, T],  // canopy base
+    [T, T, T, T, C, C, C, C, C, C, C, C, C, C, T, T, T, T],  // body widens
+    [T, T, T, C, C, D, C, C, C, C, C, C, D, C, C, T, T, T],  // wing leading
+    [T, T, C, C, D, D, C, C, C, C, C, C, D, D, C, C, T, T],  // wings grow
+    [T, C, C, D, D, C, C, C, C, C, C, C, C, D, D, C, C, T],
+    [C, C, D, D, C, C, C, C, C, C, C, C, C, C, D, D, C, C],  // max span
+    [C, C, D, C, C, C, C, C, C, C, C, C, C, C, C, D, C, C],
+    [T, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, C, T],  // wings taper
+    [T, T, C, C, C, C, C, C, C, C, C, C, C, C, C, C, T, T],
+    [T, T, T, C, C, C, C, C, C, C, C, C, C, C, C, T, T, T],
+    [T, T, T, T, C, C, C, C, C, C, C, C, C, C, T, T, T, T],  // waist
+    [T, T, T, T, T, C, B, B, C, C, B, B, C, T, T, T, T, T],  // engine pods
+    [T, T, T, T, T, C, B, A, C, C, A, B, C, T, T, T, T, T],  // engine interior
+    [T, T, T, T, T, T, B, A, C, C, A, B, T, T, T, T, T, T],  // nozzle
+    [T, T, T, T, T, T, W, W, T, T, W, W, T, T, T, T, T, T],  // exhaust glow
+  ]
+
+  return (
+    <svg
+      width={18 * s} height={20 * s}
+      style={{ imageRendering: 'pixelated', verticalAlign: 'middle' }}
+      aria-hidden="true"
+    >
+      {grid.flatMap((row, ri) =>
+        row.map((color, ci) =>
+          color ? <rect key={`${ri}-${ci}`} x={ci * s} y={ri * s} width={s} height={s} fill={color} /> : null
+        )
+      )}
+    </svg>
+  )
+}
+
 function lifeColor(life) {
   if (life > 100) return 'bg-col-green'
   if (life > 30)  return 'bg-col-amber'
@@ -36,7 +85,10 @@ function AircraftCard({ ac, mission, onAction }) {
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot} ${ac.status === 'on_mission' ? 'pulse-dot' : ''}`} />
           <span className="font-bold text-sm text-text-hi">{ac.id}</span>
           <Tooltip text={GLOSSARY[ac.type]} enabled={tooltipsEnabled}>
-            <span className="text-xs text-text-dim">{ac.type}</span>
+            <span className="flex items-center gap-1 text-xs text-text-dim">
+              <JetIcon />
+              {ac.type}
+            </span>
           </Tooltip>
         </div>
         <Tooltip text={GLOSSARY[s.label]} enabled={tooltipsEnabled}>
