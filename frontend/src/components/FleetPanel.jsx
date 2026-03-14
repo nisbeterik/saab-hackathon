@@ -1,7 +1,8 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { TooltipCtx } from '../App'
 import Tooltip from './Tooltip'
 import { GLOSSARY } from '../tooltips'
+import ConfirmModal from './ConfirmModal'
 
 const STATUS_CONFIG = {
   green:      { label: 'READY',     color: 'text-col-green',  dot: 'bg-col-green',  border: 'border-col-green/30'  },
@@ -76,8 +77,10 @@ function AircraftCard({ ac, mission, onAction }) {
   const s = STATUS_CONFIG[ac.status] ?? STATUS_CONFIG.grey
   const tooltipsEnabled = useContext(TooltipCtx)
   const lifePct = Math.min(100, Math.round((ac.remaining_life / 200) * 100))
+  const [confirm, setConfirm] = useState(null)
 
   return (
+    <>
     <div className={`bg-surface border ${s.border} rounded p-3 flex flex-col gap-1.5`}>
       {/* Header row */}
       <div className="flex items-center justify-between">
@@ -155,9 +158,10 @@ function AircraftCard({ ac, mission, onAction }) {
         {ac.status === 'green' && (
           <button
             onClick={() => {
-              if (window.confirm(`Trigger a random fault on ${ac.id}? This will put it into maintenance.`)) {
-                onAction('/api/action/trigger-fault', { aircraft_id: ac.id })
-              }
+              setConfirm({
+                message: `Trigger a random fault on ${ac.id}? This will put it into maintenance.`,
+                onConfirm: () => onAction('/api/action/trigger-fault', { aircraft_id: ac.id }),
+              })
             }}
             className="flex-1 py-0.5 text-xs border border-col-red/40 text-col-red hover:bg-col-red/10 rounded transition-colors"
           >
@@ -182,6 +186,15 @@ function AircraftCard({ ac, mission, onAction }) {
         )}
       </div>
     </div>
+
+    {confirm && (
+      <ConfirmModal
+        message={confirm.message}
+        onConfirm={() => { confirm.onConfirm(); setConfirm(null) }}
+        onCancel={() => setConfirm(null)}
+      />
+    )}
+    </>
   )
 }
 
