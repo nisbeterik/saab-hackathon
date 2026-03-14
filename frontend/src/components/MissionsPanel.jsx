@@ -2,6 +2,7 @@ import { useState, useContext, useRef, useEffect } from 'react'
 import { TooltipCtx } from '../App'
 import Tooltip from './Tooltip'
 import { GLOSSARY } from '../tooltips'
+import ConfirmModal from './ConfirmModal'
 
 const TYPE_COLOR = {
   DCA:    'text-col-blue',
@@ -86,6 +87,7 @@ export default function MissionsPanel({ state, onAssign }) {
   const [selectedAircraft, setSelectedAircraft] = useState([])
   const [assigning, setAssigning]               = useState(false)
   const [error, setError]                       = useState(null)
+  const [confirm, setConfirm]                   = useState(null)
   const assignFormRef = useRef(null)
 
   useEffect(() => {
@@ -97,14 +99,7 @@ export default function MissionsPanel({ state, onAssign }) {
   const greenAircraft      = aircraft.filter(a => a.status === 'green')
   const selectedMissionObj = missions.find(m => m.id === selectedMission)
 
-  const handleAssign = async () => {
-    if (!selectedMission || selectedAircraft.length === 0) return
-    if (hasMismatch) {
-      const ok = window.confirm(
-        `Config mismatch: not all selected aircraft match the required config "${selectedMissionObj.required_config}".\n\nThey will need reconfiguration before departure. Proceed anyway?`
-      )
-      if (!ok) return
-    }
+  const doAssign = async () => {
     setAssigning(true)
     setError(null)
     try {
@@ -116,6 +111,18 @@ export default function MissionsPanel({ state, onAssign }) {
     } finally {
       setAssigning(false)
     }
+  }
+
+  const handleAssign = () => {
+    if (!selectedMission || selectedAircraft.length === 0) return
+    if (hasMismatch) {
+      setConfirm({
+        message: `Config mismatch: not all selected aircraft match the required config "${selectedMissionObj.required_config}".\n\nThey will need reconfiguration before departure. Proceed anyway?`,
+        onConfirm: doAssign,
+      })
+      return
+    }
+    doAssign()
   }
 
   const toggleAircraft = (id) => {
@@ -130,6 +137,7 @@ export default function MissionsPanel({ state, onAssign }) {
   })
 
   return (
+    <>
     <div className="space-y-4">
 
       {/* ATO Coverage summary */}
@@ -340,5 +348,14 @@ export default function MissionsPanel({ state, onAssign }) {
         </button>
       </div>
     </div>
+
+    {confirm && (
+      <ConfirmModal
+        message={confirm.message}
+        onConfirm={() => { confirm.onConfirm(); setConfirm(null) }}
+        onCancel={() => setConfirm(null)}
+      />
+    )}
+    </>
   )
 }
