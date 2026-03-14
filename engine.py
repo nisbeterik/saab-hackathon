@@ -215,7 +215,7 @@ def create_initial_state() -> BaseState:
         ),
     ]
 
-    ato = ATO(day=2, phase="Kris", missions=missions)
+    ato = ATO(day=1, phase="Kris", missions=missions)
 
     maintenance_slots = [
         MaintenanceSlot(
@@ -234,12 +234,12 @@ def create_initial_state() -> BaseState:
 
     return BaseState(
         current_hour=8,
-        current_day=2,
+        current_day=1,
         aircraft=aircraft,
         resources=resources,
         ato=ato,
         maintenance_slots=maintenance_slots,
-        event_log=["[Day 2 08:00] Base activated. Day 2 Kris ATO loaded. GE06 in service bay (4h ETA)."],
+        event_log=["[Day 1 08:00] Base activated. Day 1 Kris ATO loaded. GE06 in service bay (4h ETA)."],
     )
 
 
@@ -451,6 +451,7 @@ def advance_time(state: BaseState, hours: int) -> BaseState:
     """
     Advance the simulation clock by the given number of hours.
     Auto-completes maintenance when ETA reaches 0.
+    Auto-generates a new ATO when the day rolls over.
     """
     for _ in range(hours):
         state.current_hour += 1
@@ -458,6 +459,7 @@ def advance_time(state: BaseState, hours: int) -> BaseState:
             state.current_hour = 0
             state.current_day += 1
             _log(state, f"--- New day: Day {state.current_day} ---")
+            generate_new_ato(state)
 
         # Decrement maintenance ETAs
         for ac in state.aircraft:
@@ -466,7 +468,135 @@ def advance_time(state: BaseState, hours: int) -> BaseState:
                 if ac.maintenance_eta <= 0:
                     complete_maintenance(state, ac.id)
 
+        # Decrement return ETAs for aircraft transiting back to base
+        for ac in state.aircraft:
+            if ac.status == "returning" and ac.return_eta is not None:
+                ac.return_eta -= 1
+                if ac.return_eta <= 0:
+                    return_from_mission(state, ac.id)
+
     _log(state, f"Time advanced by {hours}h — now Day {state.current_day} {state.current_hour:02d}:00")
+    return state
+
+
+# ---------------------------------------------------------------------------
+# ATO generation
+# ---------------------------------------------------------------------------
+_MISSION_POOL = [
+    {
+        "type": "DCA",
+        "config": "DCA/CAP",
+        "required": 2,
+        "duration": 3,
+        "descriptions": [
+            "Combat Air Patrol — northern sector",
+            "Air Defence — eastern approach",
+            "Combat Air Patrol — coastal sector",
+        ],
+        "weight": {"Fred": 2, "Kris": 3, "Krig": 4},
+    },
+    {
+        "type": "RECCE",
+        "config": "RECCE",
+        "required": 1,
+        "duration": 2,
+        "descriptions": [
+            "Photo reconnaissance — bridge complex",
+            "Intelligence gathering — supply depot",
+            "Reconnaissance — enemy troop movement",
+        ],
+        "weight": {"Fred": 3, "Kris": 2, "Krig": 1},
+    },
+    {
+        "type": "AI/ST",
+        "config": "AI/ST",
+        "required": 2,
+        "duration": 2,
+        "descriptions": [
+            "Air Interdiction — supply route strike",
+            "Strike mission — logistics hub",
+            "Air Interdiction — fuel storage facility",
+        ],
+        "weight": {"Fred": 1, "Kris": 2, "Krig": 3},
+    },
+]
+
+
+def generate_new_ato(state: BaseState) -> BaseState:
+    """
+    Generate a fresh ATO for the current day.
+    QRA standby is always included in Kris/Krig phases.
+    3–5 additional missions are drawn from a phase-weighted pool,
+    with departure times spread across the remaining hours of the day.
+    """
+    phase = state.ato.phase
+    missions: list[Mission] = []
+
+    # QRA is always present in Kris/Krig
+    if phase in ("Kris", "Krig"):
+        missions.append(Mission(
+            id="M01",
+            type="QRA",
+            required_aircraft=2,
+            required_config="DCA/CAP",
+            departure_hour=0,
+            return_hour=0,
+            description="Quick Reaction Alert — 24h standby",
+        ))
+
+    weights = [p["weight"].get(phase, 1) for p in _MISSION_POOL]
+    n_extra = random.randint(3, 5)
+
+    # First departure 2h from now (or 06:00 if called at midnight)
+    slot_hour = max((state.current_hour + 2) % 24, 2)
+
+    for _ in range(n_extra):
+        if slot_hour > 22:
+            break
+        pool_entry = random.choices(_MISSION_POOL, weights=weights, k=1)[0]
+        dep = slot_hour
+        ret = min(dep + pool_entry["duration"], 24)
+        slot_hour = dep + max(pool_entry["duration"], 3)
+
+        missions.append(Mission(
+            id=f"M{len(missions) + 1:02d}",
+            type=pool_entry["type"],
+            required_aircraft=pool_entry["required"],
+            required_config=pool_entry["config"],
+            departure_hour=dep,
+            return_hour=ret,
+            description=random.choice(pool_entry["descriptions"]),
+        ))
+
+    state.ato.missions = missions
+    state.ato.day = state.current_day
+    _log(state, f"New ATO generated for Day {state.current_day} ({phase}) — {len(missions)} missions")
+    return state
+
+
+def recall_aircraft(state: BaseState, aircraft_id: str) -> BaseState:
+    """
+    Order an airborne aircraft to return to base early.
+    Sets status to 'returning' with a 1–2h transit ETA.
+    The aircraft lands automatically when advance_time decrements the ETA to 0.
+    """
+    ac = _find_aircraft(state, aircraft_id)
+    if ac.status != "on_mission":
+        raise ValueError(f"Cannot recall {aircraft_id}: status is '{ac.status}' (must be on_mission)")
+    ac.status = "returning"
+    ac.return_eta = random.randint(1, 2)
+    _log(state, f"{aircraft_id} recalled — returning to base in {ac.return_eta}h")
+    return state
+
+
+def set_phase(state: BaseState, phase: str) -> BaseState:
+    """Change operational phase and regenerate the ATO with new phase-weighted missions."""
+    if phase not in ("Fred", "Kris", "Krig"):
+        raise ValueError(f"Invalid phase '{phase}' — must be Fred, Kris, or Krig")
+    old_phase = state.ato.phase
+    state.ato.phase = phase
+    _log(state, f"Phase changed: {old_phase} → {phase}")
+    generate_new_ato(state)
     return state
 
 
@@ -482,11 +612,12 @@ def return_from_mission(
     Optionally rolls post-mission check.
     """
     ac = _find_aircraft(state, aircraft_id)
-    if ac.status != "on_mission":
-        raise ValueError(f"Cannot return {aircraft_id}: status is '{ac.status}' (must be on_mission)")
+    if ac.status not in ("on_mission", "returning"):
+        raise ValueError(f"Cannot return {aircraft_id}: status is '{ac.status}' (must be on_mission or returning)")
 
     ac.status = "green"
     ac.location = "flight_line"
+    ac.return_eta = None
     ac.remaining_life = max(0, ac.remaining_life - flight_hours)
     ac.total_flight_hours += flight_hours
 
@@ -630,6 +761,7 @@ def serialize_state_json(state: BaseState) -> dict:
             "location": ac.location,
             "maintenance_eta": ac.maintenance_eta,
             "fault": ac.fault,
+            "return_eta": ac.return_eta,
         }
 
     def mission_to_dict(m: Mission) -> dict:

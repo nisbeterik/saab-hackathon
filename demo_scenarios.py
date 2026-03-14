@@ -40,6 +40,7 @@ DEMO_SCRIPT: list[ScenarioStep] = [
     # --- Scenario 1: Aircraft allocation (1:00–2:30) ---
     ScenarioStep(
         label="1. New ATO — allocate aircraft",
+        event_trigger="new_ato",
         question=(
             "New ATO just came in. We need to cover M01 and M02 (DCA/CAP), "
             "M04 (RECCE), and M05 (AI/ST) today. Which aircraft should we assign "

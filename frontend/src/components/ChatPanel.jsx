@@ -37,12 +37,20 @@ export default function ChatPanel({
   scenarios = [], onRunScenario, actionLoading = false,
 }) {
   const bottomRef = useRef(null)
+  const textareaRef = useRef(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showScript, setShowScript] = useState(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`
+  }, [input])
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -74,6 +82,7 @@ export default function ChatPanel({
           {scenarios.length > 0 && (
             <button
               onClick={() => { setShowScript(s => !s); setShowSuggestions(false) }}
+              title="Demo script — pre-scripted steps that load a situation and pre-fill the chat. ⚡ steps also trigger a state event."
               className={`text-xs px-2 py-0.5 rounded border transition-colors
                 ${showScript
                   ? 'border-col-amber/50 text-col-amber bg-col-amber/10'
@@ -182,13 +191,14 @@ export default function ChatPanel({
       <div className="flex-shrink-0 border-t border-border p-2">
         <div className="flex gap-2">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={e => onInputChange(e.target.value)}
             onKeyDown={handleKey}
             placeholder="Ask the AI commander..."
-            rows={2}
             className="flex-1 bg-raised border border-border rounded px-2 py-1.5 text-xs text-text-hi
-              placeholder-text-dim resize-none focus:outline-none focus:border-col-blue transition-colors"
+              placeholder-text-dim resize-none focus:outline-none focus:border-col-blue transition-colors
+              min-h-[3rem] max-h-[160px]"
           />
           <button
             onClick={onSend}

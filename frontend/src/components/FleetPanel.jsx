@@ -1,8 +1,14 @@
+import { useContext } from 'react'
+import { TooltipCtx } from '../App'
+import Tooltip from './Tooltip'
+import { GLOSSARY } from '../tooltips'
+
 const STATUS_CONFIG = {
-  green:      { label: 'READY',    color: 'text-col-green', dot: 'bg-col-green', border: 'border-col-green/30' },
-  red:        { label: 'MAINT',    color: 'text-col-red',   dot: 'bg-col-red',   border: 'border-col-red/30'   },
-  grey:       { label: 'GREY',     color: 'text-text-dim',  dot: 'bg-text-dim',  border: 'border-border'        },
-  on_mission: { label: 'AIRBORNE', color: 'text-col-blue',  dot: 'bg-col-blue',  border: 'border-col-blue/30'  },
+  green:      { label: 'READY',     color: 'text-col-green',  dot: 'bg-col-green',  border: 'border-col-green/30'  },
+  red:        { label: 'MAINT',     color: 'text-col-red',    dot: 'bg-col-red',    border: 'border-col-red/30'    },
+  grey:       { label: 'GREY',      color: 'text-text-dim',   dot: 'bg-text-dim',   border: 'border-border'         },
+  on_mission: { label: 'AIRBORNE',  color: 'text-col-blue',   dot: 'bg-col-blue',   border: 'border-col-blue/30'   },
+  returning:  { label: 'RETURNING', color: 'text-col-cyan',   dot: 'bg-col-cyan',   border: 'border-col-cyan/30'   },
 }
 
 function lifeColor(life) {
@@ -19,6 +25,7 @@ function lifeTextColor(life) {
 
 function AircraftCard({ ac, mission, onAction }) {
   const s = STATUS_CONFIG[ac.status] ?? STATUS_CONFIG.grey
+  const tooltipsEnabled = useContext(TooltipCtx)
   const lifePct = Math.min(100, Math.round((ac.remaining_life / 200) * 100))
 
   return (
@@ -28,9 +35,13 @@ function AircraftCard({ ac, mission, onAction }) {
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot} ${ac.status === 'on_mission' ? 'pulse-dot' : ''}`} />
           <span className="font-bold text-sm text-text-hi">{ac.id}</span>
-          <span className="text-xs text-text-dim">{ac.type}</span>
+          <Tooltip text={GLOSSARY[ac.type]} enabled={tooltipsEnabled}>
+            <span className="text-xs text-text-dim">{ac.type}</span>
+          </Tooltip>
         </div>
-        <span className={`text-xs font-bold tracking-wider ${s.color}`}>{s.label}</span>
+        <Tooltip text={GLOSSARY[s.label]} enabled={tooltipsEnabled}>
+          <span className={`text-xs font-bold tracking-wider ${s.color}`}>{s.label}</span>
+        </Tooltip>
       </div>
 
       {/* Life bar */}
@@ -49,7 +60,9 @@ function AircraftCard({ ac, mission, onAction }) {
 
       {/* Flight hours + config row */}
       <div className="flex items-center justify-between text-xs">
-        <span className="text-text-lo">{ac.configuration}</span>
+        <Tooltip text={GLOSSARY[ac.configuration]} enabled={tooltipsEnabled}>
+          <span className="text-text-lo">{ac.configuration}</span>
+        </Tooltip>
         <span className="text-text-dim">{ac.total_flight_hours}h total</span>
       </div>
 
@@ -61,6 +74,9 @@ function AircraftCard({ ac, mission, onAction }) {
         )}
         {ac.maintenance_eta != null && (
           <span className="text-col-amber font-semibold">{ac.maintenance_eta}h ETA</span>
+        )}
+        {ac.return_eta != null && (
+          <span className="text-col-cyan font-semibold">{ac.return_eta}h to base</span>
         )}
       </div>
 
@@ -76,7 +92,9 @@ function AircraftCard({ ac, mission, onAction }) {
       {/* Fault */}
       {ac.fault && (
         <div className="bg-col-red/10 border border-col-red/30 rounded px-2 py-1 text-xs text-col-red">
-          {ac.fault}
+          <Tooltip text={Object.entries(GLOSSARY).find(([k]) => ac.fault.includes(k))?.[1]} enabled={tooltipsEnabled}>
+            <span>{ac.fault}</span>
+          </Tooltip>
         </div>
       )}
 
@@ -104,10 +122,10 @@ function AircraftCard({ ac, mission, onAction }) {
         )}
         {ac.status === 'on_mission' && (
           <button
-            onClick={() => onAction('/api/action/return-from-mission', { aircraft_id: ac.id })}
+            onClick={() => onAction('/api/action/recall-aircraft', { aircraft_id: ac.id })}
             className="flex-1 py-0.5 text-xs border border-col-blue/40 text-col-blue hover:bg-col-blue/10 rounded transition-colors"
           >
-            Return
+            RTB
           </button>
         )}
       </div>
@@ -128,6 +146,7 @@ export default function FleetPanel({ state, onAction, fleetFilter, onClearFilter
   const allGroups = [
     { key: 'green',      label: 'Ready' },
     { key: 'on_mission', label: 'Airborne' },
+    { key: 'returning',  label: 'Returning' },
     { key: 'red',        label: 'Maintenance' },
     { key: 'grey',       label: 'Cannibalized' },
   ]
@@ -135,6 +154,7 @@ export default function FleetPanel({ state, onAction, fleetFilter, onClearFilter
   const groups = {
     green:      aircraft.filter(a => a.status === 'green'),
     on_mission: aircraft.filter(a => a.status === 'on_mission'),
+    returning:  aircraft.filter(a => a.status === 'returning'),
     red:        aircraft.filter(a => a.status === 'red'),
     grey:       aircraft.filter(a => a.status === 'grey'),
   }

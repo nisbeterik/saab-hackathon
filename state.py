@@ -14,6 +14,7 @@ class Aircraft:
     location: str = "flight_line"  # "flight_line", "service_bay", "maint_workshop", "on_mission"
     maintenance_eta: int | None = None  # hours until maintenance complete
     fault: str | None = None            # current fault description if any
+    return_eta: int | None = None       # hours until aircraft returns to base (when status="returning")
 
 
 @dataclass

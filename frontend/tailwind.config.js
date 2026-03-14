@@ -16,6 +16,7 @@ export default {
         'col-green': '#3fb950',
         'col-amber': '#d29922',
         'col-red':   '#f85149',
+        'col-cyan':  '#39c5cf',
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],

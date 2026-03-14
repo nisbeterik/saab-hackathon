@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, createContext } from 'react'
 import FleetPanel from './components/FleetPanel'
 import MissionsPanel from './components/MissionsPanel'
 import ResourcesPanel from './components/ResourcesPanel'
@@ -6,12 +6,46 @@ import ChatPanel from './components/ChatPanel'
 import EventLog from './components/EventLog'
 import ControlBar from './components/ControlBar'
 
+export const TooltipCtx = createContext(true)
+
 const TABS = ['Fleet', 'Missions', 'Resources']
 
 const PHASE_DESC = {
   Fred: 'Peacetime — low readiness, normal ops',
   Kris: 'Crisis — elevated readiness, restricted comms',
   Krig: 'War — full combat ops, minimal margin for error',
+}
+
+const PHASE_CYCLE = ['Fred', 'Kris', 'Krig']
+const PHASE_COLORS = {
+  Fred: 'text-col-green border-col-green/40',
+  Kris: 'text-col-amber border-col-amber/40',
+  Krig: 'text-col-red   border-col-red/40',
+}
+
+const AUTOPLAY_SPEEDS = [
+  { key: 'x1',  label: '×1 Slow',   ms: 60000, tip: '1 game-hour per minute — relaxed pace' },
+  { key: 'x2',  label: '×2 Normal', ms: 30000, tip: '1 game-hour every 30s — standard ops tempo' },
+  { key: 'x4',  label: '×4 Fast',   ms: 15000, tip: '1 game-hour every 15s — accelerated planning' },
+  { key: 'x15', label: '×15 Blitz', ms:  4000, tip: '1 game-hour every 4s — rapid skip-ahead' },
+]
+const AUTOPLAY_RANDOM_CHANCE = 0.04
+
+function isCritical(prev, next) {
+  if (!prev || !next) return false
+  const prevRedIds = new Set(prev.aircraft.filter(a => a.status === 'red').map(a => a.id))
+  const newFault = next.aircraft.some(a => a.status === 'red' && !prevRedIds.has(a.id))
+  const lifeDrop = next.aircraft.some(a => {
+    const p = prev.aircraft.find(p => p.id === a.id)
+    return p && p.remaining_life > 20 && a.remaining_life <= 20
+  })
+  const dayRollover = next.current_day !== prev.current_day
+  const missedDeparture = !dayRollover && (next.ato?.missions ?? []).some(m =>
+    m.assigned_aircraft?.length === 0 &&
+    prev.current_hour < m.departure_hour &&
+    next.current_hour >= m.departure_hour
+  )
+  return newFault || lifeDrop || dayRollover || missedDeparture
 }
 
 async function apiFetch(path, options = {}) {
@@ -36,8 +70,16 @@ export default function App() {
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast] = useState(null)
   const [backendError, setBackendError] = useState(false)
+  const [tooltipsEnabled, setTooltipsEnabled] = useState(true)
   const [demoScenarios, setDemoScenarios] = useState([])
+  const [autoplay, setAutoplay] = useState(false)
+  const [autoplaySpeedIdx, setAutoplaySpeedIdx] = useState(0)
+  const [autoplayRandomEvents, setAutoplayRandomEvents] = useState(false)
   const pollRef = useRef(null)
+  const autoplayRef = useRef(null)
+  const prevStateRef = useRef(null)
+  const isTickRunning = useRef(false)
+  const autoplayTickFnRef = useRef(null)
 
   const showToast = (msg, type = 'info') => {
     setToast({ msg, type })
@@ -77,6 +119,57 @@ export default function App() {
   useEffect(() => {
     apiFetch('/api/demo/scenarios').then(setDemoScenarios).catch(() => {})
   }, [])
+
+  // Keep the autoplay tick fn fresh so it always closes over latest state
+  useEffect(() => {
+    autoplayTickFnRef.current = async () => {
+      if (isTickRunning.current || actionLoading) return
+      isTickRunning.current = true
+      const prev = prevStateRef.current
+      try {
+        const next = await apiFetch('/api/action/advance-time', {
+          method: 'POST',
+          body: JSON.stringify({ hours: 1 }),
+        })
+        setState(next)
+        let checkState = next
+        if (autoplayRandomEvents && Math.random() < AUTOPLAY_RANDOM_CHANCE) {
+          const withEvent = await apiFetch('/api/action/random-event', { method: 'POST' })
+          setState(withEvent)
+          const lastEvent = withEvent.event_log?.[withEvent.event_log.length - 1]
+          if (lastEvent) showToast(lastEvent, 'info')
+          checkState = withEvent
+        }
+        if (isCritical(prev, checkState)) {
+          setAutoplay(false)
+          showToast('⏸ Autoplay paused — critical event', 'info')
+        } else {
+          prevStateRef.current = checkState
+        }
+      } catch (e) {
+        setAutoplay(false)
+        showToast(`Autoplay stopped: ${e.message}`, 'error')
+      } finally {
+        isTickRunning.current = false
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplayRandomEvents, actionLoading])
+
+  // Start/stop autoplay interval when play state or speed changes
+  useEffect(() => {
+    if (!autoplay) {
+      clearInterval(autoplayRef.current)
+      return
+    }
+    prevStateRef.current = state
+    autoplayRef.current = setInterval(
+      () => autoplayTickFnRef.current?.(),
+      AUTOPLAY_SPEEDS[autoplaySpeedIdx].ms,
+    )
+    return () => clearInterval(autoplayRef.current)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplay, autoplaySpeedIdx])
 
   const runAction = async (path, body = null) => {
     setActionLoading(true)
@@ -148,6 +241,7 @@ export default function App() {
   const grey      = state?.aircraft?.filter(a => a.status === 'grey').length ?? 0
 
   return (
+    <TooltipCtx.Provider value={tooltipsEnabled}>
     <div className="flex flex-col h-screen bg-base text-text-hi overflow-hidden">
 
       {/* Backend error banner */}
@@ -171,12 +265,28 @@ export default function App() {
                 Day {state.current_day} &middot; {String(state.current_hour).padStart(2, '0')}:00
               </span>
               <span className="text-text-dim">|</span>
-              <span
-                className="uppercase tracking-widest text-col-amber font-bold cursor-help border-b border-dashed border-col-amber/40"
-                title={PHASE_DESC[state.phase] ?? ''}
+              <button
+                onClick={() => {
+                  const next = PHASE_CYCLE[(PHASE_CYCLE.indexOf(state.phase) + 1) % 3]
+                  runAction('/api/action/set-phase', { phase: next })
+                }}
+                disabled={actionLoading}
+                title={`${PHASE_DESC[state.phase] ?? ''} — click to escalate`}
+                className={`uppercase tracking-widest font-bold border-b border-dashed transition-colors
+                  hover:opacity-70 disabled:opacity-40 cursor-pointer
+                  ${PHASE_COLORS[state.phase] ?? 'text-col-amber border-col-amber/40'}`}
               >
                 {state.phase}
-              </span>
+              </button>
+              <span className="text-text-dim">|</span>
+              <button
+                onClick={() => setTooltipsEnabled(v => !v)}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors
+                  ${tooltipsEnabled ? 'border-col-blue/50 text-col-blue' : 'border-border text-text-dim'}`}
+                title="Toggle help tooltips on acronyms and terms"
+              >
+                {tooltipsEnabled ? 'ⓘ Help ON' : 'ⓘ Help OFF'}
+              </button>
               <span className="text-text-dim">|</span>
               <span
                 className="text-col-green cursor-pointer hover:underline"
@@ -275,7 +385,19 @@ export default function App() {
 
       {/* Control bar */}
       <div className="flex-shrink-0 border-t border-border bg-surface px-3 py-2">
-        <ControlBar onAction={runAction} loading={actionLoading} />
+        <ControlBar
+          onAction={runAction}
+          loading={actionLoading}
+          scenarios={[demoScenarios[0], demoScenarios[2], demoScenarios[3]].filter(Boolean)}
+          onRunScenario={runDemoStep}
+          autoplay={autoplay}
+          onToggleAutoplay={() => setAutoplay(v => !v)}
+          autoplaySpeedIdx={autoplaySpeedIdx}
+          onCycleSpeed={() => setAutoplaySpeedIdx(i => (i + 1) % AUTOPLAY_SPEEDS.length)}
+          autoplaySpeeds={AUTOPLAY_SPEEDS}
+          autoplayRandomEvents={autoplayRandomEvents}
+          onToggleRandomEvents={() => setAutoplayRandomEvents(v => !v)}
+        />
       </div>
 
       {/* Toast */}
@@ -286,5 +408,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </TooltipCtx.Provider>
   )
 }
