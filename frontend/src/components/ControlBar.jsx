@@ -1,6 +1,7 @@
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { TooltipCtx } from '../App'
 import Tooltip from './Tooltip'
+import ConfirmModal from './ConfirmModal'
 
 const TIME_ACTIONS = [
   { label: '+1h',  hours: 1  },
@@ -21,15 +22,19 @@ export default function ControlBar({
   autoplayRandomEvents, onToggleRandomEvents,
 }) {
   const tooltipsEnabled = useContext(TooltipCtx)
+  const [confirm, setConfirm] = useState(null)
+
   const handleReset = () => {
-    if (window.confirm('Reset all state to initial? This cannot be undone.')) {
-      onAction('/api/action/reset')
-    }
+    setConfirm({
+      message: 'Reset all state to initial? This cannot be undone.',
+      onConfirm: () => onAction('/api/action/reset'),
+    })
   }
 
   const speedEntry = autoplaySpeeds[autoplaySpeedIdx] ?? { label: '×1 Slow', tip: '' }
 
   return (
+    <>
     <div className="flex flex-wrap items-center gap-2">
 
       {/* Scenario buttons */}
@@ -117,9 +122,10 @@ export default function ControlBar({
       {/* Random event */}
       <button
         onClick={() => {
-          if (window.confirm('Inject a random event? This will mutate the current state.')) {
-            onAction('/api/action/random-event')
-          }
+          setConfirm({
+            message: 'Inject a random event? This will mutate the current state.',
+            onConfirm: () => onAction('/api/action/random-event'),
+          })
         }}
         disabled={loading}
         className="px-3 py-1 border border-col-amber/50 text-col-amber hover:bg-col-amber/10
@@ -144,5 +150,14 @@ export default function ControlBar({
         </button>
       </div>
     </div>
+
+    {confirm && (
+      <ConfirmModal
+        message={confirm.message}
+        onConfirm={() => { confirm.onConfirm(); setConfirm(null) }}
+        onCancel={() => setConfirm(null)}
+      />
+    )}
+    </>
   )
 }
