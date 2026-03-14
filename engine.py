@@ -667,10 +667,14 @@ def advance_time(state: BaseState, hours: int) -> BaseState:
             # (covers return_hour=24 missions and any that were missed)
             for mission in state.ato.missions:
                 if mission.outcome is None:
-                    duration = mission.return_hour - mission.departure_hour
-                    if duration <= 0:
-                        duration += 24
-                    flight_hours = max(1, duration)
+                    # QRA is standby — aircraft don't actually fly for 23h
+                    if mission.type == "QRA":
+                        flight_hours = 1
+                    else:
+                        duration = mission.return_hour - mission.departure_hour
+                        if duration <= 0:
+                            duration += 24
+                        flight_hours = max(1, duration)
                     for ac_id in list(mission.assigned_aircraft):
                         ac = _find_aircraft_safe(state, ac_id)
                         if ac and ac.status == "on_mission":
@@ -759,10 +763,14 @@ def advance_time(state: BaseState, hours: int) -> BaseState:
         # (Order: auto-return BEFORE auto-dispatch so same-hour handoffs work correctly)
         for mission in state.ato.missions:
             if mission.return_hour == state.current_hour and mission.outcome is None:
-                duration = mission.return_hour - mission.departure_hour
-                if duration <= 0:
-                    duration += 24  # overnight mission
-                flight_hours = max(1, duration)
+                # QRA is standby — aircraft don't actually fly for 23h
+                if mission.type == "QRA":
+                    flight_hours = 1
+                else:
+                    duration = mission.return_hour - mission.departure_hour
+                    if duration <= 0:
+                        duration += 24  # overnight mission
+                    flight_hours = max(1, duration)
                 for ac_id in list(mission.assigned_aircraft):
                     ac = _find_aircraft_safe(state, ac_id)
                     if ac and ac.status == "on_mission":
