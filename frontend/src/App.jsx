@@ -2,13 +2,15 @@ import { useState, useEffect, useCallback, useRef, createContext } from 'react'
 import FleetPanel from './components/FleetPanel'
 import MissionsPanel from './components/MissionsPanel'
 import ResourcesPanel from './components/ResourcesPanel'
+import ScorePanel from './components/ScorePanel'
 import ChatPanel from './components/ChatPanel'
 import EventLog from './components/EventLog'
 import ControlBar from './components/ControlBar'
+import GameOverModal from './components/GameOverModal'
 
 export const TooltipCtx = createContext(true)
 
-const TABS = ['Fleet', 'Missions', 'Resources']
+const TABS = ['Fleet', 'Missions', 'Resources', 'Score']
 
 const PHASE_DESC = {
   Fred: 'Peacetime — low readiness, normal ops',
@@ -140,7 +142,9 @@ export default function App() {
           if (lastEvent) showToast(lastEvent, 'info')
           checkState = withEvent
         }
-        if (isCritical(prev, checkState)) {
+        if (checkState.campaign_over) {
+          setAutoplay(false)
+        } else if (isCritical(prev, checkState)) {
           setAutoplay(false)
           showToast('⏸ Autoplay paused — critical event', 'info')
         } else {
@@ -308,6 +312,26 @@ export default function App() {
                   onClick={() => { setActiveTab('Fleet'); setFleetFilter('grey') }}
                 >{grey} Grey</span>
               )}
+              {(state.aircraft_written_off?.length ?? 0) > 0 && (
+                <span
+                  className="text-col-red/70 cursor-pointer hover:underline"
+                  onClick={() => { setActiveTab('Fleet'); setFleetFilter('written_off') }}
+                >{state.aircraft_written_off.length} Lost</span>
+              )}
+              <span className="text-text-dim">|</span>
+              {/* Campaign score */}
+              <span
+                className={`font-bold cursor-pointer hover:underline ${
+                  state.campaign_score >= 750 ? 'text-col-green' :
+                  state.campaign_score >= 600 ? 'text-col-amber' :
+                  state.campaign_score >= 400 ? 'text-col-red' : 'text-col-red animate-pulse'
+                }`}
+                onClick={() => setActiveTab('Score')}
+                title={state.campaign_grade}
+              >
+                {state.campaign_score}pts
+              </span>
+              <span className="text-text-dim">Day {state.current_day}/7</span>
             </>
           )}
           {!state && <span className="text-text-dim animate-pulse">Connecting...</span>}
@@ -359,6 +383,7 @@ export default function App() {
               />
             )}
             {state && activeTab === 'Resources' && <ResourcesPanel state={state} />}
+            {state && activeTab === 'Score'     && <ScorePanel state={state} />}
           </div>
 
           {/* Event log */}
@@ -407,6 +432,12 @@ export default function App() {
           {toast.msg}
         </div>
       )}
+
+      {/* Game Over / Victory modal */}
+      <GameOverModal
+        state={state}
+        onReset={() => runAction('/api/action/reset')}
+      />
     </div>
     </TooltipCtx.Provider>
   )

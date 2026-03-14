@@ -4,11 +4,12 @@ import Tooltip from './Tooltip'
 import { GLOSSARY } from '../tooltips'
 
 const STATUS_CONFIG = {
-  green:      { label: 'READY',     color: 'text-col-green',  dot: 'bg-col-green',  border: 'border-col-green/30'  },
-  red:        { label: 'MAINT',     color: 'text-col-red',    dot: 'bg-col-red',    border: 'border-col-red/30'    },
-  grey:       { label: 'GREY',      color: 'text-text-dim',   dot: 'bg-text-dim',   border: 'border-border'         },
-  on_mission: { label: 'AIRBORNE',  color: 'text-col-blue',   dot: 'bg-col-blue',   border: 'border-col-blue/30'   },
-  returning:  { label: 'RETURNING', color: 'text-col-cyan',   dot: 'bg-col-cyan',   border: 'border-col-cyan/30'   },
+  green:       { label: 'READY',      color: 'text-col-green',  dot: 'bg-col-green',  border: 'border-col-green/30'  },
+  red:         { label: 'MAINT',      color: 'text-col-red',    dot: 'bg-col-red',    border: 'border-col-red/30'    },
+  grey:        { label: 'GREY',       color: 'text-text-dim',   dot: 'bg-text-dim',   border: 'border-border'         },
+  on_mission:  { label: 'AIRBORNE',   color: 'text-col-blue',   dot: 'bg-col-blue',   border: 'border-col-blue/30'   },
+  returning:   { label: 'RETURNING',  color: 'text-col-cyan',   dot: 'bg-col-cyan',   border: 'border-col-cyan/30'   },
+  written_off: { label: 'WRITTEN OFF',color: 'text-text-dim',   dot: 'bg-col-red',    border: 'border-col-red/20'    },
 }
 
 // Top-down pixel-art Gripen — grey only, traced from reference image
@@ -196,19 +197,21 @@ export default function FleetPanel({ state, onAction, fleetFilter, onClearFilter
   })
 
   const allGroups = [
-    { key: 'green',      label: 'Ready' },
-    { key: 'on_mission', label: 'Airborne' },
-    { key: 'returning',  label: 'Returning' },
-    { key: 'red',        label: 'Maintenance' },
-    { key: 'grey',       label: 'Cannibalized' },
+    { key: 'green',       label: 'Ready' },
+    { key: 'on_mission',  label: 'Airborne' },
+    { key: 'returning',   label: 'Returning' },
+    { key: 'red',         label: 'Maintenance' },
+    { key: 'grey',        label: 'Cannibalized' },
+    { key: 'written_off', label: 'Written Off' },
   ]
 
   const groups = {
-    green:      aircraft.filter(a => a.status === 'green'),
-    on_mission: aircraft.filter(a => a.status === 'on_mission'),
-    returning:  aircraft.filter(a => a.status === 'returning'),
-    red:        aircraft.filter(a => a.status === 'red'),
-    grey:       aircraft.filter(a => a.status === 'grey'),
+    green:       aircraft.filter(a => a.status === 'green'),
+    on_mission:  aircraft.filter(a => a.status === 'on_mission'),
+    returning:   aircraft.filter(a => a.status === 'returning'),
+    red:         aircraft.filter(a => a.status === 'red'),
+    grey:        aircraft.filter(a => a.status === 'grey'),
+    written_off: aircraft.filter(a => a.status === 'written_off'),
   }
 
   const visibleGroups = fleetFilter
@@ -238,7 +241,7 @@ export default function FleetPanel({ state, onAction, fleetFilter, onClearFilter
         <div className="bg-surface border border-border rounded p-3">
           <div className="text-xs text-text-dim uppercase tracking-wider mb-2">Fleet Wear — hours to heavy service</div>
           <div className="space-y-1.5">
-            {[...aircraft].sort((a, b) => a.remaining_life - b.remaining_life).map(ac => (
+            {[...aircraft].filter(a => a.status !== 'written_off').sort((a, b) => a.remaining_life - b.remaining_life).map(ac => (
               <div key={ac.id} className="flex items-center gap-2">
                 <span className="text-xs text-text-lo w-10 flex-shrink-0">{ac.id}</span>
                 <div className="flex-1 h-2 bg-raised rounded-full overflow-hidden">
@@ -259,7 +262,10 @@ export default function FleetPanel({ state, onAction, fleetFilter, onClearFilter
       {/* Aircraft cards grouped by status */}
       {visibleGroups.map(g => (
         <div key={g.key}>
-          <div className="text-xs text-text-dim uppercase tracking-wider mb-2">{g.label} ({groups[g.key].length})</div>
+          <div className={`text-xs uppercase tracking-wider mb-2 ${g.key === 'written_off' ? 'text-col-red/60' : 'text-text-dim'}`}>
+            {g.label} ({groups[g.key].length})
+            {g.key === 'written_off' && <span className="ml-2 normal-case">— permanently out of service</span>}
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {groups[g.key].map(ac => (
               <AircraftCard
