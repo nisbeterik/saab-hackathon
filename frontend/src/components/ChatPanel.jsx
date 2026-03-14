@@ -12,38 +12,49 @@ function fmtTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-// Pixel-art military mascot with Swedish flag on hat
+// Pixel-art Ozzy Osbourne mascot
 function Mascot({ talking = false }) {
   const s = 3
   const T = null
-  const OL = '#4a5a38', OD = '#37492e'
-  const SB = '#006AA7', SY = '#FECC02'
-  const SK = '#c8955a', EY = '#1a0800'
-  const MR = '#7a1f1f', UN = '#2e3d25'
+  // Palette
+  const HR = '#2a1a0e'  // dark brown/black hair
+  const SK = '#d4b896'  // pale skin
+  const EY = '#1a0800'  // dark pupils
+  const GL = '#6b1a5e'  // purple tinted glasses frame
+  const GL2= '#8b2a7a'  // glasses lens highlight
+  const CT = '#5a0d2a'  // dark maroon coat
+  const CD = '#3d0820'  // coat shadow/lapel
+  const SH = '#4a3a8a'  // purple shirt
+  const CR = '#b8960c'  // gold cross
+  const MR = '#7a1f1f'  // mouth interior red
+  const MH = '#c8a882'  // mouth edge skin
 
+  // 12 wide × 19 tall
   const grid = [
-    [T,  T,  OL, OL, OL, OL, OL, OL, OL, OL, T,  T ],  // hat crown
-    [T,  T,  OL, SB, SY, OL, OL, OL, OL, OL, T,  T ],  // flag badge
-    [T,  T,  OL, SY, SB, OL, OL, OL, OL, OL, T,  T ],  // flag badge
-    [T,  OD, OD, OD, OD, OD, OD, OD, OD, OD, OD, T ],  // hat brim
-    [T,  T,  SK, SK, SK, SK, SK, SK, SK, SK, T,  T ],   // forehead
-    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // face
-    [T,  SK, EY, SK, SK, SK, SK, SK, EY, SK, SK, T ],   // eyes
-    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // face
-    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // mouth row (overlaid)
-    [T,  SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, T ],   // face
-    [T,  T,  SK, SK, SK, SK, SK, SK, SK, SK, T,  T ],   // chin
-    [T,  T,  UN, UN, UN, UN, UN, UN, UN, UN, T,  T ],   // collar
-    [T,  UN, UN, UN, UN, UN, UN, UN, UN, UN, UN, T ],   // uniform
-    [T,  UN, UN, OL, UN, UN, UN, OL, UN, UN, UN, T ],   // epaulettes
-    [T,  UN, UN, UN, UN, UN, UN, UN, UN, UN, UN, T ],
-    [T,  UN, UN, UN, UN, UN, UN, UN, UN, UN, UN, T ],
-    [T,  T,  UN, UN, UN, UN, UN, UN, UN, UN, T,  T ],
+    [T,  HR, HR, HR, HR, HR, HR, HR, HR, HR, HR, T ],  // hair top
+    [HR, HR, HR, HR, HR, HR, HR, HR, HR, HR, HR, HR],  // hair wide
+    [HR, HR, SK, SK, SK, SK, SK, SK, SK, SK, HR, HR],  // forehead + hair sides
+    [HR, SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, HR],  // face
+    [HR, SK, GL, GL, SK, SK, SK, GL, GL, SK, SK, HR],  // glasses row 1 (frames)
+    [HR, SK, GL, GL2,SK, SK, SK, GL, GL2,SK, SK, HR],  // glasses row 2 (lenses)
+    [HR, SK, GL, GL, SK, SK, SK, GL, GL, SK, SK, HR],  // glasses row 3 (frames)
+    [HR, SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, HR],  // nose area
+    [HR, SK, SK, SK, SK, SK, SK, SK, SK, SK, SK, HR],  // mouth row (overlaid)
+    [HR, HR, SK, SK, SK, SK, SK, SK, SK, SK, HR, HR],  // chin
+    [T,  HR, HR, SK, SK, SK, SK, SK, SK, HR, HR, T ],  // jaw + hair drape
+    [T,  CD, CD, CD, SH, SH, SH, SH, CD, CD, CD, T ],  // collar / lapels
+    [T,  CT, CD, SH, SH, CR, SH, SH, CD, CT, CT, T ],  // coat + cross
+    [T,  CT, CT, SH, SH, CR, SH, SH, CT, CT, CT, T ],  // cross middle
+    [T,  CT, CT, SH, SH, SH, SH, SH, CT, CT, CT, T ],  // shirt lower
+    [T,  CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, T ],  // coat body
+    [T,  CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, T ],  // coat body
+    [T,  CT, CT, CT, CT, CT, CT, CT, CT, CT, CT, T ],  // coat lower
+    [T,  T,  CT, CT, CT, CT, CT, CT, CT, CT, T,  T ],  // coat hem
   ]
 
   return (
     <svg
-      width={12 * s} height={17 * s}
+      width={12 * s} height={19 * s}
       style={{ imageRendering: 'pixelated', flexShrink: 0 }}
       aria-hidden="true"
     >
@@ -52,14 +63,25 @@ function Mascot({ talking = false }) {
           color ? <rect key={`${ri}-${ci}`} x={ci * s} y={ri * s} width={s} height={s} fill={color} /> : null
         )
       )}
-      {/* Mouth — closed: thin line */}
+      {/* Mouth — closed: thin dark line */}
       <rect
         x={4 * s} y={8 * s + 1} width={4 * s} height={1} fill={EY}
         className={talking ? 'mouth-closed-talking' : ''}
       />
-      {/* Mouth — open: taller gap */}
+      {/* Mouth — open: red interior */}
       <rect
         x={4 * s} y={8 * s} width={4 * s} height={s + 2} fill={MR}
+        className={talking ? 'mouth-open-talking' : ''}
+        opacity={talking ? undefined : 0}
+      />
+      {/* Mouth corners when open */}
+      <rect
+        x={3 * s + 1} y={8 * s + 1} width={s - 1} height={s} fill={MH}
+        className={talking ? 'mouth-open-talking' : ''}
+        opacity={talking ? undefined : 0}
+      />
+      <rect
+        x={8 * s} y={8 * s + 1} width={s - 1} height={s} fill={MH}
         className={talking ? 'mouth-open-talking' : ''}
         opacity={talking ? undefined : 0}
       />
@@ -179,7 +201,7 @@ export default function ChatPanel({
       <div className="flex items-center justify-between px-3 py-2 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-col-green" />
-          <span className="text-xs font-bold tracking-wider uppercase text-text-hi">AI Assistant</span>
+          <span className="text-xs font-bold tracking-wider uppercase text-text-hi">Ozzy Ai-rborne</span>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -220,7 +242,7 @@ export default function ChatPanel({
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && (
           <div className="space-y-2 text-xs text-text-dim">
-            <p className="font-semibold text-text-lo">Base Commander AI — Ask anything:</p>
+            <p className="font-semibold text-text-lo">Based Commander AI — Ask anything:</p>
             <ul className="space-y-1 list-none">
               {QUICK_PROMPTS.map((q, i) => (
                 <li

@@ -15,8 +15,8 @@ function StartScreen({ onStart }) {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-base text-text-hi gap-8 px-8">
       <div className="flex flex-col items-center gap-2">
-        <span className="text-col-blue font-bold text-2xl tracking-widest uppercase">SAAB</span>
-        <h1 className="text-3xl font-bold tracking-wider text-text-hi">BASE COMMANDER</h1>
+        <span className="text-col-blue font-bold text-2xl tracking-widest uppercase">SAABATH</span>
+        <h1 className="text-3xl font-bold tracking-wider text-text-hi">BASED COMMANDER</h1>
         <p className="text-text-dim text-sm tracking-wide">Swedish Air Force — Dispersed Road Base Simulator</p>
       </div>
       <div className="max-w-md text-center space-y-3 text-sm text-text-lo leading-relaxed border border-border rounded-lg p-6 bg-surface">
@@ -88,12 +88,17 @@ async function apiFetch(path, options = {}) {
   return res.json()
 }
 
+const OZZY_INTRO = {
+  role: 'assistant',
+  content: "I'm Ozzy Ai-rborne — Prince of Darkness, now at your service, Commander. Tell me what you need.",
+}
+
 export default function App() {
   const [gameStarted, setGameStarted] = useState(false)
   const [state, setState] = useState(null)
   const [activeTab, setActiveTab] = useState('Fleet')
   const [fleetFilter, setFleetFilter] = useState(null)
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState([{ ...OZZY_INTRO, time: new Date() }])
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -222,7 +227,7 @@ export default function App() {
       setState(data)
       // Clear frontend chat when state resets (backend already cleared LLM history)
       if (path === '/api/action/reset' && data.chat_cleared) {
-        setMessages([])
+        setMessages([{ ...OZZY_INTRO, time: new Date() }])
       }
       // Surface what the random event actually was
       if (path === '/api/action/random-event' && data.event_log?.length) {
@@ -256,7 +261,7 @@ export default function App() {
 
   const clearChat = async () => {
     await apiFetch('/api/chat/clear', { method: 'POST' }).catch(() => {})
-    setMessages([])
+    setMessages([{ ...OZZY_INTRO, time: new Date() }])
   }
 
   const ready     = state?.aircraft?.filter(a => a.status === 'green').length ?? 0
@@ -282,9 +287,9 @@ export default function App() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-surface border-b border-border flex-shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-col-blue font-bold text-sm tracking-widest uppercase">SAAB</span>
+          <span className="text-col-blue font-bold text-sm tracking-widest uppercase">SAABATH</span>
           <span className="text-text-dim">|</span>
-          <span className="font-semibold text-sm tracking-wider">BASE COMMANDER</span>
+          <span className="font-semibold text-sm tracking-wider">BASED COMMANDER</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-text-lo">
           {state && (
